@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>কর ফাঁকির তদন্ত প্রতিবেদন</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Noto+Serif+Bengali:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1d2b28; --muted:#5b6b67; --green:#0e4d3c; --green-2:#16664f; --canvas:#e6ecea; --panel:#f7faf9;
+  --rule:#c7d2cf; --input:#e3eefb; --input-line:#8fb3e0; --input-focus:#2f6fbf; --warn:#b3261e; --paper:#fff;
+  --ui:'Hind Siliguri','Noto Sans Bengali','Nirmala UI','Kohinoor Bangla',system-ui,sans-serif;
+  --rep:'Noto Serif Bengali','Nikosh','NikoshBAN','Kohinoor Bangla','Nirmala UI',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--ui);color:var(--ink);background:var(--canvas);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--input-focus);outline-offset:2px}
+
+/* chrome */
+.top{position:sticky;top:0;z-index:5;background:var(--green);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
+.top h1{font-size:17px;font-weight:600;margin:0;flex:1;min-width:180px}
+.top h1 small{display:block;font-weight:400;opacity:.75;font-size:12.5px}
+.btn{border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff;border-radius:6px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.12)}
+.btn.primary{background:#fff;color:var(--green);border-color:#fff;font-weight:600}
+.btn.primary:hover{background:#e9f3ef}
+.btn.dark{border-color:var(--rule);color:var(--ink);background:#fff}
+.btn.dark:hover{background:var(--panel)}
+.btn.danger{border:none;color:var(--warn);background:none;padding:4px 8px}
+.layout{display:grid;grid-template-columns:minmax(380px,520px) 1fr;min-height:calc(100vh - 56px)}
+.side{background:var(--panel);border-right:1px solid var(--rule);display:flex;flex-direction:column;min-width:0}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--rule);padding:0 8px;background:#fff;position:sticky;top:0}
+.tab{border:none;background:none;padding:11px 12px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tab[aria-selected=true]{color:var(--green);border-bottom-color:var(--green);font-weight:600}
+.tab.preview-only{display:none}
+.pane{padding:16px 16px 60px;overflow:auto}
+.years{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.chip{border:1px solid var(--rule);background:#fff;border-radius:999px;padding:4px 11px;cursor:pointer;font-size:13.5px}
+.chip[aria-pressed=true]{background:var(--green);border-color:var(--green);color:#fff}
+fieldset{border:none;margin:0 0 18px;padding:0}
+legend{font-weight:600;font-size:14.5px;padding:0;margin-bottom:8px;color:var(--green)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.f{display:flex;flex-direction:column;gap:3px;min-width:0}
+.f.wide{grid-column:1/-1}
+.f label{font-size:13.5px;line-height:1.3}
+.f label span{display:block;color:var(--muted);font-size:11.5px}
+.in{background:var(--input);border:1px solid var(--input-line);border-radius:5px;padding:6px 8px;width:100%;min-width:0}
+.in:focus{border-color:var(--input-focus);background:#fff;outline:none;box-shadow:0 0 0 2px rgba(47,111,191,.2)}
+.in.num{text-align:right;font-variant-numeric:tabular-nums}
+.in.bad{border-color:var(--warn);background:#fdecea}
+textarea.in{resize:vertical;min-height:80px;line-height:1.5}
+.hint{font-size:12.5px;color:var(--muted);margin:4px 0 12px}
+.legend-note{display:block;font-size:12.5px;color:var(--muted);margin-bottom:14px}
+.legend-note i{display:inline-block;vertical-align:-2px;margin-right:6px;width:22px;height:14px;background:var(--input);border:1px solid var(--input-line);border-radius:3px}
+.sum{background:#fff;border:1px solid var(--rule);border-left:4px solid var(--green);border-radius:6px;padding:10px 12px;margin-bottom:16px;display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:13.5px}
+.sum b{text-align:right;font-variant-numeric:tabular-nums}
+.sum .big{font-weight:600;border-top:1px solid var(--rule);padding-top:4px;margin-top:2px}
+/* row editor */
+.rows{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:#fff}
+.rows table{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px}
+.rows th{background:#eef3f1;font-weight:600;text-align:left;padding:6px;font-size:12.5px;border-bottom:1px solid var(--rule)}
+.rows td{padding:4px;border-bottom:1px solid #edf1f0;vertical-align:top}
+.rows td.n{width:28px;text-align:center;color:var(--muted);padding-top:9px}
+.rows .tot td{font-weight:600;background:#f4f8f6;text-align:right;padding:7px 8px}
+.rows .in{padding:5px 6px}
+.addrow{margin-top:10px}
+.empty{padding:18px;text-align:center;color:var(--muted)}
+.banner{background:#e7f4ee;border:1px solid #9fcdb8;color:#0e4d3c;border-radius:6px;padding:9px 12px;margin-bottom:14px;font-size:13.5px}
+.banner.err{background:#fdecea;border-color:#e6a39d;color:var(--warn)}
+.imp{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px dashed var(--input-line);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:13px;color:var(--muted)}
+.imp .btn{flex:none}
+.review{background:#fff;border:1px solid var(--input-line);border-radius:8px;padding:12px;margin-bottom:18px}
+.review h3{margin:0 0 4px;font-size:15px;color:var(--green)}
+.review .pick{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-size:13.5px}
+.review table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.review td,.review th{border-bottom:1px solid #edf1f0;padding:6px 4px;vertical-align:top;text-align:left}
+.review th{font-size:12px;color:var(--muted);font-weight:500}
+.review td.cur{color:var(--muted);white-space:pre-line;max-width:150px;overflow-wrap:anywhere}
+.review textarea.in{min-height:40px}
+.review .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.review .btn.go{background:var(--green);color:#fff;border-color:var(--green)}
+details.notes{background:#fff;border:1px solid var(--rule);border-radius:6px;padding:8px 12px;margin-top:8px;font-size:13.5px}
+details.notes summary{cursor:pointer;font-weight:600;color:var(--green)}
+details.notes ol{padding-left:20px;margin:8px 0}
+details.notes li{margin-bottom:5px}
+
+/* preview */
+.viewer{overflow:auto;padding:24px;display:flex;justify-content:center}
+.paperWrap{transform-origin:top left}
+.paper{width:210mm;min-height:297mm;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.08),0 8px 28px rgba(14,77,60,.12);padding:16mm 15mm}
+
+/* ===== report typography ===== */
+.rep{font-family:var(--rep);font-size:10.5pt;line-height:1.55;color:#000}
+.rep.sans{font-family:'Nikosh','NikoshBAN','Noto Sans Bengali','Kohinoor Bangla','Nirmala UI',sans-serif}
+.rep .head{text-align:center;white-space:pre-line;margin-bottom:6px}
+.rep h2{font-size:12pt;text-align:center;margin:8px 0 14px;text-decoration:underline;text-underline-offset:3px}
+.rep h3{font-size:10.5pt;margin:14px 0 6px;break-after:avoid}
+.rep h4{font-size:10.5pt;margin:10px 0 4px;break-after:avoid;font-weight:600}
+.rep .kv{display:grid;grid-template-columns:44mm 1fr;gap:1px 6px;margin-bottom:8px}
+.rep .kv div:nth-child(odd){font-weight:600}
+.rep p{margin:6px 0;text-align:justify;white-space:pre-line}
+.rep table{border-collapse:collapse;width:100%;margin:4px 0 10px;font-size:9pt;line-height:1.35}
+.rep th,.rep td{border:1px solid #333;padding:3px 4px;vertical-align:top}
+.rep th{background:#eef0ef;font-weight:600;text-align:center}
+.rep td.r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rep td.c{text-align:center}
+.rep tr{break-inside:avoid}
+.rep thead{display:table-header-group}
+.rep tr.tot td{font-weight:700;background:#f5f6f5}
+.rep .calc{break-inside:avoid;margin-bottom:12px}
+.rep .calc table td:first-child{width:52%}
+.rep .calc td.ind{padding-left:18px}
+.rep .calc tr.sub td{font-weight:600;background:#f5f6f5}
+.rep .calc tr.key td{font-weight:700}
+.rep .note{font-size:9.5pt;text-align:center;font-style:italic}
+.rep .sign{margin-top:36px;margin-left:auto;width:62mm;text-align:center;white-space:pre-line;break-inside:avoid}
+.rep .muted{color:#555}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .side{border-right:none}
+  .tab.preview-only{display:block}
+  .viewer{display:none;padding:12px}
+  body.show-preview .viewer{display:flex}
+  body.show-preview .pane{display:none}
+  .grid{grid-template-columns:1fr}
+  .top{padding:8px 10px;gap:6px}
+  .top h1{font-size:15.5px;min-width:100%}
+  .top h1 small{display:none}
+  .btn{padding:4px 9px;font-size:13.5px}
+}
+@media print{
+  @page{size:A4;margin:14mm 13mm}
+  body{background:#fff}
+  .top,.side,.tabs{display:none!important}
+  .layout{display:block}
+  .viewer{display:block!important;padding:0;overflow:visible}
+  .paperWrap{transform:none!important;height:auto!important;width:auto!important}
+  .paper{width:auto;min-height:0;box-shadow:none;padding:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>কর ফাঁকির তদন্ত প্রতিবেদন<small>Tax evasion investigation report — calculator</small></h1>
+  <button class="btn" id="bImport" title="Excel workbooks fill the account tables; Word notes and letters fill the taxpayer details">Import files</button>
+  <input type="file" id="xlsIn" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+  <input type="file" id="anyIn" accept=".xlsx,.docx" multiple hidden>
+  <input type="file" id="docIn" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden>
+  <button class="btn" id="bSave" title="Download all inputs as a .json file">Save data</button>
+  <button class="btn" id="bOpen" title="Load a previously saved .json file">Open data</button>
+  <input type="file" id="fileIn" accept=".json,application/json" hidden>
+  <button class="btn" id="bReset" title="Start a new report: clears the taxpayer, yearly figures and accounts; keeps the office text">New report</button>
+  <button class="btn" id="bWord" title="Download the report as an editable Word document">Download Word</button>
+  <button class="btn primary" id="bPrint" title="Opens the print dialog — choose “Save as PDF” as the printer">Download PDF</button>
+</header>
+<div class="layout">
+  <section class="side">
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <div class="pane" id="pane"></div>
+  </section>
+  <section class="viewer" id="viewer"><div class="paperWrap" id="paperWrap"><div class="paper"><div class="rep" id="report"></div></div></div></section>
+</div>
+
+<script>
+/* ===== Calculation engine =====
+   One model for the whole report (replaces the parallel Tax Calculation / Report chains). */
+// Income heads (ITA 2023): [found key, shown-in-return key, label]
+const INCOME_HEADS = [
+  ['empIncome','shownEmp','(ক) চাকরি হইতে আয়'],
+  ['rentIncome','shownRent','(খ) ভাড়া হইতে আয়'],
+  ['agriIncome','shownAgri','(গ) কৃষি হইতে আয়'],
+  ['bizIncome','shownBiz','(ঘ) ব্যবসা হইতে আয়'],
+  ['capGains','shownCapGains','(ঙ) মূলধনি আয়'],
+  ['finIncome','shownFin','(চ) সঞ্চয়পত্রের সুদ আয় (চূড়ান্ত করদায়)'],
+  ['otherIncome','shownOther','(ছ) অন্যান্য উৎস হইতে আয়'],
+];
+// Older saved data used different keys; bring it up to date.
+function migrate(d){
+  for(const Y of d.years || []){
+    if('salary' in Y){ Y.empIncome = Y.empIncome || Y.salary; delete Y.salary; }
+    if('shownSalary' in Y){ Y.shownEmp = Y.shownEmp || Y.shownSalary; delete Y.shownSalary; }
+    if('exemptIncome' in Y || 'otherReceipts' in Y){
+      const a = String(Y.exemptIncome||'').trim(), b = String(Y.otherReceipts||'').trim();
+      if(!('exemptOther' in Y)) Y.exemptOther = !b ? a : !a ? b : '=' + [a,b].map(x=>x.replace(/^=/,'').replace(/,/g,'')).map(x=>'('+x+')').join('+');
+      delete Y.exemptIncome; delete Y.otherReceipts;
+    }
+    for(const [k,s] of INCOME_HEADS){ if(!(k in Y)) Y[k] = ''; if(!(s in Y)) Y[s] = ''; }
+    for(const k of ['incomeSource','shownSanch','disallowedLiab','undisclosedLoan','loanDeposit','adjustment']) delete Y[k];
+  }
+  delete d.sanch;                       // savings-certificate tables are no longer used
+  for(const k of ['bank','fdr']) d[k] = Array.from({length:7}, (_,i) => (d[k]||[])[i] || []);
+  return d;
+}
+const YEARS = ['2019-2020','2020-2021','2021-2022','2022-2023','2023-2024','2024-2025','2025-2026'];
+
+// Tax slabs (band width, rate); last band open-ended. Applied to regular-rate income.
+const SLABS = [
+  [[250000,0],[400000,.10],[500000,.15],[600000,.20],[3000000,.25],[Infinity,.30]],
+  [[300000,0],[100000,.05],[300000,.10],[400000,.15],[500000,.20],[Infinity,.25]],
+  [[300000,0],[100000,.05],[300000,.10],[400000,.15],[500000,.20],[Infinity,.25]],
+  [[300000,0],[100000,.05],[300000,.10],[400000,.15],[500000,.20],[Infinity,.25]],
+  [[350000,0],[100000,.05],[300000,.10],[400000,.15],[500000,.20],[Infinity,.25]],
+  [[350000,0],[100000,.05],[400000,.10],[500000,.15],[500000,.20],[Infinity,.25]],
+  [[375000,0],[300000,.10],[400000,.15],[500000,.20],[2000000,.25],[Infinity,.30]],
+];
+// Surcharge on rebuilt net wealth: rate applies when wealth EXCEEDS the threshold.
+const SURCHARGE = [
+  [[30000000,.10],[50000000,.15],[100000000,.20],[150000000,.25],[200000000,.30]],
+  [[30000000,.10],[50000000,.15],[100000000,.20],[150000000,.25],[200000000,.30]],
+  [[30000000,.10],[100000000,.20],[200000000,.30],[500000000,.35]],
+  [[30000000,.10],[100000000,.20],[200000000,.30],[500000000,.35]],
+  [[40000000,.10],[100000000,.20],[200000000,.30],[500000000,.35]],
+  [[40000000,.10],[100000000,.20],[200000000,.30],[500000000,.35]],
+  [[40000000,.10],[100000000,.20],[200000000,.30],[500000000,.35]],
+];
+function rebate(y, inv, inc) {
+  inv = Math.max(0, inv); inc = Math.max(0, inc);
+  if (y <= 2) return Math.min(inv, inc * 0.25, 15000000) * (inc <= 1500000 ? 0.15 : 0.10);
+  if (y === 3) return Math.min(inv, inc * 0.20, 10000000) * 0.15;
+  return Math.min(inv * 0.15, inc * 0.03, 1000000);  // 2023-24 onward (ITA 2023 s.78)
+}
+function slabTax(y, x) {
+  let tax = 0, rest = Math.max(0, x);
+  for (const [w, r] of SLABS[y]) { const t = Math.min(rest, w); tax += t * r; rest -= t; if (rest <= 0) break; }
+  return tax;
+}
+function surchargeRate(y, w) { let r = 0; for (const [t, rate] of SURCHARGE[y]) if (w > t) r = rate; return r; }
+
+// Number parser: accepts plain numbers (with commas / Bengali digits) or "=" arithmetic like =9583*5+136129
+const BN = '০১২৩৪৫৬৭৮৯';
+function toLatin(s) { return String(s).replace(/[০-৯]/g, d => BN.indexOf(d)); }
+function num(v) {
+  if (v === null || v === undefined) return 0;
+  let s = toLatin(v).trim().replace(/,/g, '');
+  if (!s || s === '-') return 0;
+  if (s[0] === '=') s = s.slice(1);
+  if (!/^[0-9+\-*/().\s%]+$/.test(s)) return NaN;
+  try { s = s.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)'); const r = Function('"use strict";return (' + s + ')')(); return isFinite(r) ? r : NaN; }
+  catch (e) { return NaN; }
+}
+const n0 = v => { const x = num(v); return isNaN(x) ? 0 : x; };
+function sumRows(rows, k) { return (rows || []).reduce((a, r) => a + n0(r[k]), 0); }
+
+// A year appears in the report only if something was entered for it: any field on the yearly tab
+// (the penalty rate, which is pre-filled, does not count) or any bank / FDR account.
+function yearHasData(d, y){
+  const Y = d.years[y] || {};
+  const filled = Object.entries(Y).some(([k,v]) => k !== 'penaltyRate' && String(v ?? '').trim() !== '' && !(num(v) === 0 && /^[=0\s.,০-]*$/.test(String(v))));
+  const rows = [...(d.bank[y]||[]), ...(d.fdr[y]||[])].some(r => Object.values(r).some(v => String(v ?? '').trim() !== ''));
+  return filled || rows;
+}
+function computeAll(d) {
+  const out = [];
+  let prevRebuilt = n0(d.meta.prevNW);
+  const female = !!d.meta.female;
+  for (let y = 0; y < 7; y++) {
+    const Y = d.years[y], g = k => n0(Y[k]);
+    const bank = d.bank[y] || [], fdr = d.fdr[y] || [];
+    const r = { y, year: YEARS[y], included: yearHasData(d, y) };
+    // bank findings
+    r.bankDep = sumRows(bank, 'deposit'); r.bankInt = sumRows(bank, 'interest'); r.bankTds = sumRows(bank, 'tds'); r.bankBal = sumRows(bank, 'balance');
+    r.fdrDep = sumRows(fdr, 'deposit');   r.fdrInt = sumRows(fdr, 'interest');   r.fdrTds = sumRows(fdr, 'tds');   r.fdrBal = sumRows(fdr, 'balance');
+    // 3.1 undisclosed taxable income (component-wise: found vs shown in return)
+    r.interest = r.bankInt + r.fdrInt;
+    r.heads = INCOME_HEADS.map(([k]) => g(k));
+    r.foundIncome = r.interest + r.heads.reduce((a,b)=>a+b,0);
+    r.shownComp = g('shownInterest') + INCOME_HEADS.reduce((a,[,s])=>a+g(s),0);
+    r.undiscIncome = Math.max(0, r.interest - g('shownInterest')) + INCOME_HEADS.reduce((a,[k,s])=>a+Math.max(0, g(k)-g(s)),0);
+    // 3.2 expenses
+    r.tdsFound = r.bankTds + r.fdrTds;
+    r.priorTax = g('priorTax'); r.familyExp = g('familyExp');
+    r.foundExp = r.tdsFound + r.priorTax + r.familyExp;
+    r.shownExp = g('declaredExp');
+    r.undiscExp = Math.max(0, r.foundExp - r.shownExp);
+    // 3.3 investments
+    r.foundInv = r.fdrBal + r.bankBal;
+    r.shownInv = g('shownFDR') + g('shownBank');
+    r.undiscInv = Math.max(0, r.foundInv - r.shownInv);
+    // 4 deposits
+    r.dps = g('dpsDeposit');
+    r.totalDep = r.bankDep + r.fdrDep + r.dps;
+    // 5 computation
+    r.declaredIncome = g('declaredIncome');
+    r.totalTaxable = r.declaredIncome + r.undiscIncome;
+    r.declaredNW = g('declaredNW');
+    r.rebuilt = r.declaredNW + r.undiscInv;
+    r.prevRebuilt = prevRebuilt;
+    r.growth = r.rebuilt - prevRebuilt;
+    r.totalExp = r.shownExp + r.undiscExp;
+    r.growthExp = r.growth + r.totalExp;
+    r.exempt = g('exemptOther');
+    r.unexplained = Math.max(0, r.growthExp - r.totalTaxable - r.exempt);
+    r.assessed = r.unexplained + r.totalTaxable;
+    r.finalIncome = g('finalIncome');
+    r.regular = Math.max(0, r.assessed - r.finalIncome);
+    r.slabBase = female ? Math.max(0, r.regular - 50000) : r.regular;
+    r.tax = slabTax(y, r.slabBase) + g('finalTax');
+    r.rebate = Math.min(r.tax, rebate(y, g('rebateInv'), r.regular));
+    r.afterRebate = r.tax - r.rebate;
+    r.surRate = surchargeRate(y, r.rebuilt);
+    r.surcharge = r.afterRebate * r.surRate;
+    r.env = g('envSurcharge');
+    r.totalTax = r.afterRebate + r.surcharge + r.env;
+    r.paid = g('taxPaid');
+    r.undiscTds = Math.max(0, r.tdsFound - g('shownTDS'));
+    r.totalPaid = r.paid + r.undiscTds;
+    r.evaded = Math.max(0, r.totalTax - r.totalPaid);
+    r.penRate = g('penaltyRate') / 100;
+    r.penalty = r.evaded * r.penRate;
+    r.grand = r.evaded + r.penalty;
+    prevRebuilt = r.rebuilt;
+    out.push(r);
+  }
+  return out;
+}
+
+/* ===== Minimal .xlsx reader (no library, works offline) ===== */
+async function unzipXlsx(buf){
+  const dv = new DataView(buf), u8 = new Uint8Array(buf);
+  let eocd = -1;
+  for(let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 70000); i--) if(dv.getUint32(i,true) === 0x06054b50){ eocd = i; break; }
+  if(eocd < 0) throw new Error('This is not an .xlsx file. In Excel, use File › Save As › Excel Workbook (.xlsx) and try again.');
+  const count = dv.getUint16(eocd+10,true); let p = dv.getUint32(eocd+16,true);
+  const td = new TextDecoder(), files = {};
+  for(let k=0;k<count;k++){
+    if(dv.getUint32(p,true) !== 0x02014b50) break;
+    const method = dv.getUint16(p+10,true), csize = dv.getUint32(p+20,true);
+    const nlen = dv.getUint16(p+28,true), elen = dv.getUint16(p+30,true), clen = dv.getUint16(p+32,true), off = dv.getUint32(p+42,true);
+    files[td.decode(u8.subarray(p+46,p+46+nlen))] = {method, csize, off};
+    p += 46 + nlen + elen + clen;
+  }
+  return async name => {
+    const f = files[name]; if(!f) return null;
+    const start = f.off + 30 + dv.getUint16(f.off+26,true) + dv.getUint16(f.off+28,true);
+    const data = u8.subarray(start, start + f.csize);
+    if(f.method === 0) return td.decode(data);
+    if(typeof DecompressionStream === 'undefined') throw new Error('This browser cannot read Excel files. Please use a current version of Chrome, Edge, Firefox or Safari.');
+    const ds = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return await new Response(ds).text();
+  };
+}
+const xmlDoc = s => new DOMParser().parseFromString(s, 'application/xml');
+const kids = (el, name) => Array.from(el.getElementsByTagNameNS('*', name));
+function colIdx(ref){ let n = 0; for(const ch of ref.replace(/[0-9$]/g,'')) n = n*26 + ch.charCodeAt(0) - 64; return n - 1; }
+
+async function readWorkbook(buf){
+  const get = await unzipXlsx(buf);
+  const wb = xmlDoc(await get('xl/workbook.xml') || '');
+  const rels = xmlDoc(await get('xl/_rels/workbook.xml.rels') || '');
+  const relMap = {}; kids(rels,'Relationship').forEach(r => relMap[r.getAttribute('Id')] = r.getAttribute('Target'));
+  const ssXml = await get('xl/sharedStrings.xml');
+  const shared = ssXml ? kids(xmlDoc(ssXml),'si').map(si => kids(si,'t').filter(t => t.parentNode.localName !== 'rPh').map(t => t.textContent).join('')) : [];
+  const sheets = [];
+  for(const s of kids(wb,'sheet')){
+    const rid = s.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id') || s.getAttribute('r:id');
+    let target = relMap[rid] || ''; target = target.startsWith('/') ? target.slice(1) : 'xl/' + target.replace(/^\.\//,'');
+    const x = await get(target); if(!x) continue;
+    const rows = [];
+    for(const c of kids(xmlDoc(x),'c')){
+      const ref = c.getAttribute('r'); if(!ref) continue;
+      const r = parseInt(ref.replace(/[A-Z$]/g,''),10) - 1, ci = colIdx(ref), t = c.getAttribute('t');
+      const vEl = kids(c,'v')[0], fEl = kids(c,'f')[0];
+      let v = vEl ? vEl.textContent : null;
+      if(t === 's') v = shared[+v] ?? '';
+      else if(t === 'inlineStr') v = kids(c,'t').map(e => e.textContent).join('');
+      else if(t === 'e') v = null;
+      else if(t !== 'str' && t !== 'b' && v !== null && v !== '') v = Number(v);
+      const f = fEl && fEl.textContent ? fEl.textContent : null;
+      (rows[r] ||= [])[ci] = {v, f};
+    }
+    sheets.push({name: s.getAttribute('name'), rows});
+  }
+  return sheets;
+}
+
+/* Turn a sheet laid out like "Bank Details (Non-FD)" / "FDR Details" / "Sanchaypatra" into accounts per tax year. */
+const HDR = [ // order matters: "মোট জমা (ক্রেডিটকৃত সুদ ব্যতীত)" must become deposit, not interest
+  ['bank',    /ব্যাংক|bank|institution/i],
+  ['acct',    /হিসাব\s*(নং|নম্বর)|account\s*(no|number)|a\/c/i],
+  ['type',    /ধর[ণন]|type/i],
+  ['deposit', /জমা|deposit/i],
+  ['tds',     /কর্তন|tds|tax\s*deduct/i],
+  ['interest',/সুদ|interest/i],
+  ['balance', /স্থিতি|balance/i],
+];
+function cellText(c){ return c == null || c.v == null ? '' : String(c.v).trim(); }
+function cellValue(c, numeric){
+  if(!c || c.v == null || c.v === '') return '';
+  if(numeric && c.f && /^[0-9+\-*/().\s]+$/.test(c.f)) return '=' + c.f.replace(/\s+/g,'');
+  if(typeof c.v === 'number') return numeric ? String(Math.round(c.v*100)/100) : String(c.v);
+  return String(c.v).trim();
+}
+function yearOf(text){
+  const s = String(text).replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+  const m = s.match(/(20\d\d)\s*[-–—\/]\s*(\d{2,4})/); if(!m) return -1;
+  const i = +m[1] - 2019; return i >= 0 && i < 7 ? i : -1;
+}
+function parseAccountSheet(sheet){
+  const out = {}; let year = -1, map = null;
+  for(const row of sheet.rows){
+    if(!row) continue;
+    const texts = row.map(cellText);
+    const joined = texts.join(' ');
+    if(texts.some(t => /ব্যাংকের\s*নাম|bank\s*name/i.test(t))){        // header row
+      map = {};
+      texts.forEach((t,ci) => { if(!t) return; const h = HDR.find(([k,re]) => re.test(t) && !(k in map)); if(h) map[h[0]] = ci; });
+      if(year >= 0) out[year] ||= [];
+      continue;
+    }
+    const y = texts.map(yearOf).find(i => i >= 0);
+    if(y !== undefined && /কর\s*(বর্ষ|বছর)|tax\s*year|assessment/i.test(joined)){ year = y; map = null; out[year] ||= []; continue; }
+    if(!map || year < 0) continue;
+    if(texts.slice(0,3).some(t => /^(মোট|†gvU|total)/i.test(t))){ map = null; continue; }   // total row ends the block
+    const rec = {};
+    for(const [k] of HDR) rec[k] = map[k] === undefined ? '' : cellValue(row[map[k]], !['bank','type','acct'].includes(k));
+    if(Object.values(rec).some(v => v !== '')) out[year].push(rec);
+  }
+  return out;
+}
+function sheetKind(name){
+  if(/fdr|fixed/i.test(name) || /এফডিআর/.test(name)) return 'fdr';
+  if(/sanchay|savings\s*cert|সঞ্চয়পত্র/i.test(name)) return null;   // savings certificates are not used
+  if(/bank|non-?fd|ব্যাংক/i.test(name)) return 'bank';
+  return null;
+}
+
+/* ===== English → Bangla transliteration for bank names, branches and account types =====
+   Works like Google Input Tools: words are written the way they sound, not translated —
+   except "Branch", which becomes "শাখা". A dictionary covers bank-related words and
+   Bangladeshi place names; anything else goes through phonetic rules. */
+const TL_DICT = {
+  // translated
+  branch:'শাখা', br:'শাখা',
+  // common bank words
+  bank:'ব্যাংক', banks:'ব্যাংকস', banking:'ব্যাংকিং', limited:'লিমিটেড', ltd:'লিমিটেড', plc:'পিএলসি', pvt:'প্রাইভেট', private:'প্রাইভেট',
+  public:'পাবলিক', company:'কোম্পানি', co:'কোং', corporation:'কর্পোরেশন', corp:'কর্পোরেশন', finance:'ফাইন্যান্স', financial:'ফাইন্যান্সিয়াল',
+  investment:'ইনভেস্টমেন্ট', investments:'ইনভেস্টমেন্টস', securities:'সিকিউরিটিজ', leasing:'লিজিং', housing:'হাউজিং', holdings:'হোল্ডিংস',
+  capital:'ক্যাপিটাল', insurance:'ইন্স্যুরেন্স', life:'লাইফ', general:'জেনারেল', trust:'ট্রাস্ট', commercial:'কমার্শিয়াল', development:'ডেভেলপমেন্ট',
+  international:'ইন্টারন্যাশনাল', national:'ন্যাশনাল', islami:'ইসলামী', islamic:'ইসলামিক', shariah:'শরীয়াহ', social:'সোশ্যাল', standard:'স্ট্যান্ডার্ড',
+  chartered:'চার্টার্ড', mercantile:'মার্কেন্টাইল', premier:'প্রিমিয়ার', prime:'প্রাইম', pubali:'পূবালী', uttara:'উত্তরা', janata:'জনতা',
+  sonali:'সোনালী', agrani:'অগ্রণী', rupali:'রূপালী', basic:'বেসিক', krishi:'কৃষি', rajshahi:'রাজশাহী', dutch:'ডাচ', bangla:'বাংলা',
+  bangladesh:'বাংলাদেশ', eastern:'ইস্টার্ন', city:'সিটি', mutual:'মিউচুয়াল', one:'ওয়ান', dhaka:'ঢাকা', southeast:'সাউথইস্ট', jamuna:'যমুনা',
+  shahjalal:'শাহজালাল', arafah:'আরাফাহ', al:'আল', first:'ফার্স্ট', security:'সিকিউরিটি', exim:'এক্সিম', midland:'মিডল্যান্ড', modhumoti:'মধুমতি',
+  meghna:'মেঘনা', padma:'পদ্মা', global:'গ্লোবাল', union:'ইউনিয়ন', community:'কমিউনিটি', bengal:'বেঙ্গল', citizens:'সিটিজেনস', citizen:'সিটিজেন',
+  brac:'ব্র্যাক', state:'স্টেট', habib:'হাবিব', woori:'উরি', ceylon:'সিলন', probashi:'প্রবাসী', kallyan:'কল্যাণ', ansar:'আনসার', vdp:'ভিডিপি',
+  unnayan:'উন্নয়ন', karmasangsthan:'কর্মসংস্থান', grameen:'গ্রামীণ', lankabangla:'লংকাবাংলা', delta:'ডেল্টা', savings:'সেভিংস', saving:'সেভিং',
+  cooperative:'কো-অপারেটিভ', foreign:'ফরেন', exchange:'এক্সচেঞ্জ', hsbc:'এইচএসবিসি', citibank:'সিটিব্যাংক', citi:'সিটি', axis:'অ্যাক্সিস',
+  mudaraba:'মুদারাবা', mudarabah:'মুদারাবা', wadiah:'ওয়াদিয়াহ', hajj:'হজ্জ', nrb:'এনআরবি', nrbc:'এনআরবিসি', ific:'আইএফআইসি', ucb:'ইউসিবি',
+  ab:'এবি', ncc:'এনসিসি', dbh:'ডিবিএইচ', idlc:'আইডিএলসি', ipdc:'আইপিডিসি', bkash:'বিকাশ', nagad:'নগদ', rocket:'রকেট', ekpay:'একপে',
+  // account types and banking terms
+  account:'অ্যাকাউন্ট', accounts:'অ্যাকাউন্টস', ac:'এসি', current:'কারেন্ট', deposit:'ডিপোজিট', deposits:'ডিপোজিটস', fixed:'ফিক্সড', term:'টার্ম',
+  scheme:'স্কিম', special:'স্পেশাল', notice:'নোটিশ', short:'শর্ট', monthly:'মাসিক', month:'মাস', months:'মাস', year:'বছর', years:'বছর',
+  profit:'প্রফিট', interest:'ইন্টারেস্ট', pension:'পেনশন', student:'স্টুডেন্ট', salary:'স্যালারি', payroll:'পে-রোল', loan:'লোন', card:'কার্ড',
+  credit:'ক্রেডিট', debit:'ডেবিট', millionaire:'মিলিয়নিয়ার', double:'ডাবল', triple:'ট্রিপল', money:'মানি', plus:'প্লাস', premium:'প্রিমিয়াম',
+  gold:'গোল্ড', silver:'সিলভার', platinum:'প্লাটিনাম', priority:'প্রায়োরিটি', super:'সুপার', smart:'স্মার্ট', easy:'ইজি', mobile:'মোবাইল',
+  online:'অনলাইন', digital:'ডিজিটাল', joint:'জয়েন্ট', single:'সিঙ্গেল', individual:'ইন্ডিভিজুয়াল', personal:'পার্সোনাল', business:'বিজনেস',
+  sme:'এসএমই', retail:'রিটেইল', treasury:'ট্রেজারি', bond:'বন্ড', bonds:'বন্ডস', sanchaypatra:'সঞ্চয়পত্র', wage:'ওয়েজ', earner:'আর্নার',
+  development_:'', // placeholder, ignored
+  // places and addresses
+
+  // more Dhaka / Chattogram / Sylhet areas and common English address words
+  commerce:'কমার্স', falah:'ফালাহ', bangabandhu:'বঙ্গবন্ধু', bishwa:'বিশ্ব', biswa:'বিশ্ব', janapath:'জনপথ', kapasia:'কাপাসিয়া',
+  bhairab:'ভৈরব', kuril:'কুড়িল', rupnagar:'রূপনগর', kalshi:'কালশী', topkhana:'তোপখানা', hatirpool:'হাতিরপুল', pragati:'প্রগতি', shimanto:'সীমান্ত', mouchak:'মৌচাক',
+  satmasjid:'সাতমসজিদ', rayer:'রায়ের', rayerbazar:'রায়েরবাজার', asia:'এশিয়া', lake:'লেক', circus:'সার্কাস', green:'গ্রীন', ring:'রিং',
+  benefit:'বেনিফিট', kakoli:'কাকলী', hatkhola:'হাটখোলা', shyambazar:'শ্যামবাজার', gandaria:'গেন্ডারিয়া', postogola:'পোস্তগোলা',
+  azimpur:'আজিমপুর', nilkhet:'নীলক্ষেত', newmarket:'নিউমার্কেট', science:'সায়েন্স', laboratory:'ল্যাবরেটরি', bangshal:'বংশাল',
+  narinda:'নারিন্দা', tikatuli:'টিকাটুলী', gopibagh:'গোপীবাগ', kamalapur:'কমলাপুর', arambagh:'আরামবাগ', fakirapool:'ফকিরাপুল',
+  bijoynagar:'বিজয়নগর', press:'প্রেস', club:'ক্লাব', shahjadpur:'শাহজাদপুর', merul:'মেরুল', aftabnagar:'আফতাবনগর', banasree:'বনশ্রী',
+  banashree:'বনশ্রী', mugda:'মুগদা', sabujbagh:'সবুজবাগ', goran:'গোড়ান', jigatola:'জিগাতলা', zigatola:'জিগাতলা', hazaribagh:'হাজারীবাগ',
+  asad:'আসাদ', adabor:'আদাবর', gabtoli:'গাবতলী', darussalam:'দারুস সালাম', technical:'টেকনিক্যাল', kallyanpur:'কল্যাণপুর',
+  shewrapara:'শেওড়াপাড়া', kazipara:'কাজীপাড়া', taltola:'তালতলা', ibrahimpur:'ইব্রাহিমপুর', kachukhet:'কচুক্ষেত', section:'সেকশন',
+  abdullahpur:'আবদুল্লাহপুর', azampur:'আজমপুর', diabari:'দিয়াবাড়ী', board:'বোর্ড', joydebpur:'জয়দেবপুর', chandra:'চন্দ্রা',
+  konabari:'কোনাবাড়ী', sreepur:'শ্রীপুর', bhaluka:'ভালুকা', fatullah:'ফতুল্লা', chashara:'চাষাড়া', rupganj:'রূপগঞ্জ', araihazar:'আড়াইহাজার',
+  sonargaon:'সোনারগাঁও', madanpur:'মদনপুর', bhulta:'ভুলতা', kanchpur:'কাঁচপুর', siddhirganj:'সিদ্ধিরগঞ্জ', hotel:'হোটেল', sena:'সেনা',
+  kalyan:'কল্যাণ', nobinagar:'নবীনগর', dhamrai:'ধামরাই', hemayetpur:'হেমায়েতপুর', bypail:'বাইপাইল', zirabo:'জিরাবো', dohar:'দোহার',
+  nawabganj:'নবাবগঞ্জ', bandar:'বন্দর', panchlaish:'পাঁচলাইশ', andarkilla:'আন্দরকিল্লা', anderkilla:'আন্দরকিল্লা', jubilee:'জুবিলী',
+  laldighi:'লালদীঘি', muradpur:'মুরাদপুর', oxygen:'অক্সিজেন', bahaddarhat:'বহদ্দারহাট', dewanhat:'দেওয়ানহাট', zindabazar:'জিন্দাবাজার',
+  amberkhana:'আম্বরখানা', upashahar:'উপশহর', garden:'গার্ডেন', park:'পার্ক', view:'ভিউ', hill:'হিল', point:'পয়েন্ট', bridge:'ব্রিজ',
+  school:'স্কুল', link:'লিংক', cross:'ক্রস', royal:'রয়্যাল', pacific:'প্যাসিফিক', education:'এডুকেশন', marriage:'ম্যারেজ', kids:'কিডস',
+  junior:'জুনিয়র', senior:'সিনিয়র', women:'উইমেন', woman:'উইমেন', lady:'লেডি', ladies:'লেডিস', farmer:'ফার্মার', freedom:'ফ্রিডম',
+  fighter:'ফাইটার', remittance:'রেমিট্যান্স', dollar:'ডলার', taka:'টাকা', highway:'হাইওয়ে', bus:'বাস', stand:'স্ট্যান্ড',
+  terminal:'টার্মিনাল', rail:'রেল', railway:'রেলওয়ে', ghat:'ঘাট', haat:'হাট', hat:'হাট', shimanta:'সীমান্ত', shimanto_:'', mitford:'মিটফোর্ড',
+  wireless:'ওয়্যারলেস', mohakhali_:'', gulshan_:'', dohs:'ডিওএইচএস', progoti:'প্রগতি', sarani:'সরণি', shoroni:'সরণি', mirpur_:'',
+  kazir:'কাজীর', dewri:'দেউড়ি', colonel:'কর্নেল', hazi:'হাজী', haji:'হাজী', mosque:'মসজিদ', masjid:'মসজিদ', mandir:'মন্দির',
+  sadar_:'', union_:'', parishad:'পরিষদ', pourashava:'পৌরসভা', paurashava:'পৌরসভা', thana:'থানা', upazilla:'উপজেলা', zila:'জেলা',
+  district:'ডিস্ট্রিক্ট', division:'ডিভিশন', village:'গ্রাম', vill:'গ্রাম', post:'পোস্ট', po:'পোস্ট', ps:'পিএস',
+  corporate:'কর্পোরেট', principal:'প্রিন্সিপাল', main:'মেইন', local:'লোকাল', office:'অফিস', head:'হেড', road:'রোড', rd:'রোড', avenue:'এভিনিউ',
+  ave:'এভিনিউ', tower:'টাওয়ার', plaza:'প্লাজা', market:'মার্কেট', bazar:'বাজার', bazaar:'বাজার', chowrasta:'চৌরাস্তা', sadar:'সদর', upazila:'উপজেলা',
+  zilla:'জিলা', model:'মডেল', town:'টাউন', new:'নিউ', old:'ওল্ড', north:'নর্থ', south:'সাউথ', east:'ইস্ট', west:'ওয়েস্ট', sector:'সেক্টর',
+  circle:'সার্কেল', area:'এরিয়া', gate:'গেট', more:'মোড়', mor:'মোড়', square:'স্কয়ার', center:'সেন্টার', centre:'সেন্টার', complex:'কমপ্লেক্স',
+  house:'হাউস', building:'বিল্ডিং', bhaban:'ভবন', bhabon:'ভবন', lane:'লেন', block:'ব্লক', station:'স্টেশন', airport:'এয়ারপোর্ট', port:'পোর্ট',
+  university:'ইউনিভার্সিটি', college:'কলেজ', hospital:'হাসপাতাল', medical:'মেডিক্যাল', cantonment:'ক্যান্টনমেন্ট', residential:'আবাসিক',
+  industrial:'ইন্ডাস্ট্রিয়াল', estate:'এস্টেট', export:'এক্সপোর্ট', processing:'প্রসেসিং', zone:'জোন', epz:'ইপিজেড', city_:'',
+  gulshan:'গুলশান', banani:'বনানী', baridhara:'বারিধারা', dhanmondi:'ধানমন্ডি', motijheel:'মতিঝিল', dilkusha:'দিলকুশা', paltan:'পল্টন',
+  purana:'পুরানা', naya:'নয়া', kawran:'কাওরান', karwan:'কারওয়ান', farmgate:'ফার্মগেট', tejgaon:'তেজগাঁও', mohakhali:'মহাখালী', mirpur:'মিরপুর',
+  pallabi:'পল্লবী', kafrul:'কাফরুল', mohammadpur:'মোহাম্মদপুর', shyamoli:'শ্যামলী', lalmatia:'লালমাটিয়া', kalabagan:'কলাবাগান', panthapath:'পান্থপথ',
+  elephant:'এলিফ্যান্ট', shahbagh:'শাহবাগ', segunbagicha:'সেগুনবাগিচা', segun:'সেগুন', bagicha:'বাগিচা', ramna:'রমনা', malibagh:'মালিবাগ',
+  moghbazar:'মগবাজার', mogbazar:'মগবাজার', rampura:'রামপুরা', badda:'বাড্ডা', khilgaon:'খিলগাঁও', basabo:'বাসাবো', shantinagar:'শান্তিনগর',
+  kakrail:'কাকরাইল', wari:'ওয়ারী', jatrabari:'যাত্রাবাড়ী', demra:'ডেমরা', sutrapur:'সূত্রাপুর', kotwali:'কোতোয়ালী', lalbagh:'লালবাগ',
+  chawkbazar:'চকবাজার', islampur:'ইসলামপুর', nawabpur:'নবাবপুর', babubazar:'বাবুবাজার', sadarghat:'সদরঘাট', keraniganj:'কেরানীগঞ্জ',
+  savar:'সাভার', ashulia:'আশুলিয়া', tongi:'টঙ্গী', gazipur:'গাজীপুর', narayanganj:'নারায়ণগঞ্জ', uttarkhan:'উত্তরখান', dakshinkhan:'দক্ষিণখান',
+  khilkhet:'খিলক্ষেত', nikunja:'নিকুঞ্জ', bashundhara:'বসুন্ধরা', vatara:'ভাটারা', niketan:'নিকেতন', agargaon:'আগারগাঁও', sher:'শের',
+  bangla_:'', nagar:'নগর', chattogram:'চট্টগ্রাম', chittagong:'চট্টগ্রাম', agrabad:'আগ্রাবাদ', khulshi:'খুলশী', nasirabad:'নাসিরাবাদ',
+  halishahar:'হালিশহর', patenga:'পতেঙ্গা', khatunganj:'খাতুনগঞ্জ', sylhet:'সিলেট', khulna:'খুলনা', barishal:'বরিশাল', barisal:'বরিশাল',
+  rangpur:'রংপুর', mymensingh:'ময়মনসিংহ', comilla:'কুমিল্লা', cumilla:'কুমিল্লা', bogura:'বগুড়া', bogra:'বগুড়া', jessore:'যশোর', jashore:'যশোর',
+  tangail:'টাঙ্গাইল', narsingdi:'নরসিংদী', munshiganj:'মুন্সিগঞ্জ', manikganj:'মানিকগঞ্জ', faridpur:'ফরিদপুর', noakhali:'নোয়াখালী', feni:'ফেনী',
+  coxs:'কক্সেস', cox:'কক্স', bazar_:'', dinajpur:'দিনাজপুর', pabna:'পাবনা', kushtia:'কুষ্টিয়া', jamalpur:'জামালপুর', kishoreganj:'কিশোরগঞ্জ',
+  brahmanbaria:'ব্রাহ্মণবাড়িয়া', chandpur:'চাঁদপুর', lakshmipur:'লক্ষ্মীপুর', habiganj:'হবিগঞ্জ', moulvibazar:'মৌলভীবাজার', sunamganj:'সুনামগঞ্জ',
+  sirajganj:'সিরাজগঞ্জ', natore:'নাটোর', naogaon:'নওগাঁ', satkhira:'সাতক্ষীরা', bagerhat:'বাগেরহাট', patuakhali:'পটুয়াখালী', bhola:'ভোলা',
+  gopalganj:'গোপালগঞ্জ', madaripur:'মাদারীপুর', shariatpur:'শরীয়তপুর', rajbari:'রাজবাড়ী', netrokona:'নেত্রকোনা', sherpur:'শেরপুর',
+  kurigram:'কুড়িগ্রাম', gaibandha:'গাইবান্ধা', nilphamari:'নীলফামারী', thakurgaon:'ঠাকুরগাঁও', panchagarh:'পঞ্চগড়', joypurhat:'জয়পুরহাট',
+  chapainawabganj:'চাঁপাইনবাবগঞ্জ', meherpur:'মেহেরপুর', chuadanga:'চুয়াডাঙ্গা', jhenaidah:'ঝিনাইদহ', magura:'মাগুরা', narail:'নড়াইল',
+  pirojpur:'পিরোজপুর', jhalokati:'ঝালকাঠি', barguna:'বরগুনা', rangamati:'রাঙ্গামাটি', bandarban:'বান্দরবান', khagrachari:'খাগড়াছড়ি',
+  paradise:'প্যারাডাইস', para:'পাড়া', panthapath_:'', eskaton:'ইস্কাটন', bijoy:'বিজয়', sarani:'সরণি', kazi:'কাজী', nazrul:'নজরুল', islam:'ইসলাম',
+  shahid:'শহীদ', shaheed:'শহীদ', suhrawardy:'সোহরাওয়ার্দী', sheikh:'শেখ', mujib:'মুজিব', bir:'বীর', uttam:'উত্তম', road_:'',
+};
+const TL_LETTER = {a:'এ',b:'বি',c:'সি',d:'ডি',e:'ই',f:'এফ',g:'জি',h:'এইচ',i:'আই',j:'জে',k:'কে',l:'এল',m:'এম',n:'এন',o:'ও',p:'পি',q:'কিউ',r:'আর',s:'এস',t:'টি',u:'ইউ',v:'ভি',w:'ডব্লিউ',x:'এক্স',y:'ওয়াই',z:'জেড'};
+// Consonant sounds (longest first) and vowel sounds: [independent form, dependent sign]
+const TL_CONS = [['tch','চ'],['sch','স্ক'],['sh','শ'],['ch','চ'],['th','থ'],['ph','ফ'],['kh','খ'],['gh','ঘ'],['dh','ধ'],['bh','ভ'],['jh','ঝ'],
+  ['ck','ক'],['qu','কু'],['ng','ং'],['dg','জ'],['b','ব'],['c','ক'],['d','ড'],['f','ফ'],['g','গ'],['h','হ'],['j','জ'],['k','ক'],['l','ল'],['m','ম'],
+  ['n','ন'],['p','প'],['q','ক'],['r','র'],['s','স'],['t','ট'],['v','ভ'],['w','ও'],['x','ক্স'],['z','জ']];
+const TL_VOW = [['igh',['আই','াই']],['eau',['ও','ো']],['ee',['ই','ী']],['ea',['ই','ি']],['oo',['উ','ু']],['ou',['আউ','াউ']],['ow',['আউ','াউ']],
+  ['oi',['অয়','য়']],['oy',['অয়','য়']],['ai',['এই','েই']],['ay',['এ','ে']],['ey',['এ','ে']],['ei',['এই','েই']],['au',['অ','']],['aw',['অ','']],
+  ['oa',['ও','ো']],['ie',['আই','াই']],['ue',['উ','ু']],['ui',['উই','ুই']],['ia',['িয়া','িয়া']],['io',['িও','িও']],
+  ['a',['আ','া']],['e',['এ','ে']],['i',['ই','ি']],['o',['ও','ো']],['u',['আ','া']],['y',['ই','ি']]];
+function tlPhonetic(w){
+  w = w.toLowerCase();
+  let out = '', i = 0, prevCons = false;
+  // silent final e after consonant ("prime" → prim + long i), "tion"/"sion" endings
+  const magic = /[aeiou][b-df-hj-np-tv-z]e$/.test(w) && w.length > 3;
+  if(magic) w = w.slice(0,-1);
+  while(i < w.length){
+    const rest = w.slice(i);
+    if(/^[st]ion/.test(rest) && i > 0){ out += 'শন'; i += 4; prevCons = false; continue; }
+    // vowel
+    const v = TL_VOW.find(([k]) => rest.startsWith(k));
+    if(v){
+      let [indep, dep] = v[1], key = v[0];
+      const LONG = {a:['এ','ে'], i:['আই','াই'], o:['ও','ো'], u:['ইউ','িউ'], e:['ই','ী']};
+      if(magic && i === w.length - 2 && key.length === 1 && LONG[key]) [indep, dep] = LONG[key];      // vowel before a silent e is long
+      else if(key==='a' && prevCons && /^a(nk|n|m|t|p|ck|k|g|d|b|ss|x)([^aeiouy]|$)/.test(rest)) { indep = 'অ্যা'; dep = '্যা'; }  // bank, man
+      else if(key==='u' && i > 0 && !/^u[^aeiou]{2}/.test(rest)) { indep = 'উ'; dep = 'ু'; }
+      else if(key==='y' && i === 0){ out += 'ইয়'; i += 1; prevCons = true; continue; }
+      out += prevCons ? dep : indep;
+      i += key.length; prevCons = false; continue;
+    }
+    const c = TL_CONS.find(([k]) => rest.startsWith(k));
+    if(c){
+      let [key, bn] = c;
+      if(key === 'c' && /^c[eiy]/.test(rest)) bn = 'স';
+      if(key === 'g' && /^g[eiy]/.test(rest) && i > 0) bn = 'জ';
+      if(key === 'w'){ const nx = w[i+1]; if(nx && /[aeiou]/.test(nx)){ out += prevCons ? '্ও' : 'ওয়'; i += 1; prevCons = true; continue; } bn = 'উ'; }
+      if(key === 'h' && prevCons){ i += 1; continue; }                    // silent h after a consonant
+      if(prevCons && out.endsWith(bn) && key.length === 1){ i += 1; continue; }  // doubled letters: "ll" → ল
+      if(key === 'ng'){ out += 'ং'; i += 2; prevCons = false; continue; }
+      if(prevCons){
+        if(out.endsWith('র') && !out.endsWith('্র')) out = out.slice(0,-1) + 'র্' + bn;   // r + consonant → reph
+        else out += '্' + bn;
+      } else out += bn;
+      i += key.length; prevCons = true; continue;
+    }
+    out += w[i]; i += 1; prevCons = false;
+  }
+  return out.replace(/্([ংঃ])/g,'$1');
+}
+
+// Bengali words written in English letters (place names such as "Rupnagar", "Kalshi")
+const BR_CONS = [['chh','ছ'],['kh','খ'],['gh','ঘ'],['ch','চ'],['jh','ঝ'],['th','থ'],['dh','ধ'],['ph','ফ'],['bh','ভ'],['sh','শ'],['rh','ঢ়'],
+  ['k','ক'],['g','গ'],['c','চ'],['j','জ'],['t','ত'],['d','দ'],['n','ন'],['p','প'],['b','ব'],['m','ম'],['r','র'],['l','ল'],['s','স'],['h','হ'],
+  ['y','য়'],['z','জ'],['f','ফ'],['v','ভ'],['w','ও'],['q','ক'],['x','ক্স']];
+const BR_VOW = [['ia',['ইয়া','িয়া']],['aa',['আ','া']],['ee',['ঈ','ী']],['oo',['উ','ু']],['ou',['ঔ','ৌ']],['oi',['ঐ','ৈ']],['ai',['ঐ','ৈ']],
+  ['a',['আ','া']],['i',['ই','ি']],['u',['উ','ু']],['e',['এ','ে']],['o',['ও','ো']]];
+function tlBengaliRoman(w){
+  w = w.toLowerCase(); let out = '', i = 0, prevCons = false, syl = 0;
+  while(i < w.length){
+    const rest = w.slice(i);
+    const v = BR_VOW.find(([k]) => rest.startsWith(k));
+    if(v){
+      const [key, [indep, dep]] = v, last = i + key.length >= w.length;
+      if(key === 'a' && prevCons && syl > 0 && !last) { /* inherent vowel: nothing */ }
+      else out += prevCons ? dep : indep;
+      i += key.length; prevCons = false; syl++; continue;
+    }
+    if(rest.startsWith('ng')){ const vAfter = /^ng[aeiou]/.test(rest); out += vAfter ? 'ঙ্গ' : 'ং'; i += 2; prevCons = vAfter; continue; }
+    const c = BR_CONS.find(([k]) => rest.startsWith(k));
+    if(c){ let [key, bn] = c; if(key === 'w' && prevCons) bn = 'ব';
+      if(prevCons && out.endsWith(bn) && key.length === 1){ i++; continue; }
+      if(prevCons){ if(out.endsWith('র') && !out.endsWith('্র')) out = out.slice(0,-1) + 'র্' + bn; else out += '্' + bn; }
+      else out += bn;
+      i += key.length; prevCons = true; continue; }
+    out += w[i]; i++; prevCons = false;
+  }
+  return out;
+}
+const BR_SUFFIX = [['nagar','নগর'],['ganj','গঞ্জ'],['pur','পুর'],['bari','বাড়ী'],['para','পাড়া'],['bazar','বাজার'],['hat','হাট'],['tola','তলা'],
+  ['khali','খালী'],['gaon','গাঁও'],['abad','আবাদ'],['dighi','দীঘি'],['pukur','পুকুর'],['kandi','কান্দি'],['bagh','বাগ'],['ghat','ঘাট'],['chor','চর']];
+const looksEnglish = w => /(tion|sion|ment|ness|ing|ture|ph|ck|qu|x|ee[^r]|oo[kdt]|[aeiou][^aeiouy]e$|er$|ly$|ics?$|al$|ty$|ce$|ge$|w[aeiou])/i.test(w);
+function tlFallback(w){
+  const lw = w.toLowerCase();
+  const suf = BR_SUFFIX.find(([k]) => lw.endsWith(k) && lw.length > k.length + 2);
+  if(suf){ const stem = lw.slice(0, -suf[0].length); return (TL_DICT[stem] || tlFallback(stem)) + suf[1]; }
+  return looksEnglish(lw) ? tlPhonetic(lw) : tlBengaliRoman(lw);
+}
+function tlWord(w){
+  const lw = w.toLowerCase();
+  if(Object.prototype.hasOwnProperty.call(TL_DICT, lw) && TL_DICT[lw]) return TL_DICT[lw];
+  const isAcronym = (w === w.toUpperCase() && w.length <= 5) || !/[aeiouy]/i.test(w);
+  if(isAcronym) return [...lw].map(ch => TL_LETTER[ch] || ch).join('');
+  return tlFallback(w);
+}
+/** Convert the English words in a string; Bangla text, numbers and punctuation are kept (digits become Bangla digits). */
+function toBanglaText(s){
+  if(!s || !/[A-Za-z]/.test(s)) return s;
+  return String(s)
+    .replace(/[A-Za-z]+(?:'[A-Za-z]+)?/g, w => tlWord(w.replace(/'/g,'')))
+    .replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d])
+    .replace(/\s*\.(?=\s|,|$)/g, m => m.trim() === '.' ? '' : m)          // "Ltd." / "Br." → no trailing dot
+    .replace(/\s+/g,' ').trim();
+}
+
+/* ===== Bijoy (SutonnyMJ) → Unicode ===== */
+const BIJOY_MAP = {
+ 'i¨':'র‌্য','ª¨':'্র্য','°':'ক্ক','±':'ক্ট','³':'ক্ত','µ':'ক্র','¶':'ক্ষ','ÿ':'ক্ষ','·':'ক্স','¸':'গু','»':'গ্ধ','Mªy':'গ্রু',
+ '¼':'ঙ্ক','½':'ঙ্গ','¾':'জ্জ','À':'জ্ঝ','Á':'জ্ঞ','Â':'ঞ্চ','Ã':'ঞ্ছ','Ä':'ঞ্জ','Å':'ঞ্ঝ','Æ':'ট্ট','Ç':'ড্ড','È':'ণ্ট','É':'ণ্ঠ',
+ 'Ê':'ণ্ড','Ë':'ত্ত','Ì':'ত্থ','Î':'ত্র','Ï':'দ্দ','×':'দ্ধ','Ø':'দ্ব','Ù':'দ্ম','Ú':'ন্ঠ','Û':'ন্ড','Ü':'ন্ধ','Ý':'ন্স',
+ 'Þ':'প্ট','ß':'প্ত','à':'প্প','á':'প্স','â':'ব্জ','ã':'ব্দ','ä':'ব্ধ','å':'ভ্র','ç':'ম্ফ','é':'ল্ক','ê':'ল্গ','ë':'ল্প','ì':'ল্ট',
+ 'í':'ল্ড','î':'ল্ফ','ï':'শু','ð':'শ্চ','ñ':'শ্ছ','ò':'ষ্ণ','ó':'ষ্ট','ô':'ষ্ঠ','õ':'ষ্ফ','÷':'স্ট','ö':'স্খ','ù':'স্ফ','û':'হু','ý':'হ্ন',
+ 'þ':'হ্ম','ü':'হৃ','iæ':'রু','iƒ':'রূ','¿':'ত্র','`ª“':'দ্রু',
+ // prefix (half) forms
+ 'š':'ন্','›':'ন্','¯':'স্','¤':'ম্','®':'ষ্','˜':'দ্','™':'দ্','”':'চ্','•':'ঙ্',
+ // suffix (joining) forms
+ '—':'্ত','Í':'্ত','’':'্থ','‘':'্তু','œ':'্ন','¥':'্ম','ø':'্ল','¬':'্ল','ú':'্প','‹':'্ক','Œ':'্ক্র','§':'্ম','¢':'্ভ','£':'্ভ্র',
+ '¡':'্ব','¦':'্ব','Ÿ':'্ব','^':'্ব','ª':'্র','Ö':'্র','«':'্র','¨':'্য','&':'্',
+ 'Av':'আ','A':'অ','B':'ই','C':'ঈ','D':'উ','E':'ঊ','F':'ঋ','G':'এ','H':'ঐ','I':'ও','J':'ঔ',
+ 'K':'ক','L':'খ','M':'গ','N':'ঘ','O':'ঙ','P':'চ','Q':'ছ','R':'জ','S':'ঝ','T':'ঞ','U':'ট','V':'ঠ','W':'ড','X':'ঢ','Y':'ণ','Z':'ত',
+ '_':'থ','`':'দ','a':'ধ','b':'ন','c':'প','d':'ফ','e':'ব','f':'ভ','g':'ম','h':'য','i':'র','j':'ল','k':'শ','l':'ষ','m':'স','n':'হ',
+ 'o':'ড়','p':'ঢ়','q':'য়','r':'ৎ','s':'ং','t':'ঃ','u':'ঁ',
+ '0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯',
+ 'v':'া','w':'ি','x':'ী','y':'ু','z':'ু','“':'ু','æ':'ু','~':'ূ','ƒ':'ূ','‚':'ূ','„':'ৃ','…':'ৃ','‡':'ে','†':'ে','‰':'ৈ','ˆ':'ৈ','Š':'ৗ',
+ '©':'\uE000','|':'।','Ô':'‘','Õ':'’','Ò':'“','Ó':'”'
+};
+const BIJOY_RE = new RegExp(Object.keys(BIJOY_MAP).sort((a,b)=>b.length-a.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g');
+const BN_CONS = 'কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহৎ';
+function bijoyToUnicode(s){
+  let u = s.replace(BIJOY_RE, m => BIJOY_MAP[m]).normalize('NFD').replace(/্্+/g,'্');
+  const C = `[${BN_CONS}]়?`, CL = `${C}(?:্${C})*(?:‌?্[যর])?`;   // consonant cluster incl. nukta and phola
+  // pre-base vowel signs (ি ে ৈ) are typed before the consonant in Bijoy: move them after the cluster
+  u = u.replace(new RegExp(`([িেৈ])(${CL})`,'g'), '$2$1');
+  // reph (typed after the cluster and its vowel signs) goes in front of the cluster
+  u = u.replace(new RegExp(`(${CL})([ািীুূৃেৈৗ]*)\uE000`,'g'), 'র্$1$2').replace(/\uE000/g,'র্');
+  // candrabindu typed before a vowel sign goes after it
+  u = u.replace(/ঁ([ািীুূৃেৈৗ]+)/g, '$1ঁ');
+  return u.normalize('NFC');
+}
+
+/* ===== Read basic taxpayer information from Word (.docx) notes and letters ===== */
+const isBijoyFont = f => !!f && /MJ$|Bijoy/i.test(f.trim());
+async function readDocx(buf){
+  const get = await unzipXlsx(buf).catch(()=>{ throw new Error('This is not a .docx file. In Word, use File › Save As › Word Document (.docx) and try again.'); });
+  const docXml = await get('word/document.xml'); if(!docXml) throw new Error('This file has no Word document inside it.');
+  const styles = xmlDoc(await get('word/styles.xml') || '<x/>');
+  const fontOfRPr = rPr => { const f = rPr && kids(rPr,'rFonts')[0]; return f ? (f.getAttribute('w:ascii') || f.getAttribute('w:hAnsi') || f.getAttribute('w:cs')) : null; };
+  const styleFont = {}; let defFont = null;
+  kids(styles,'rPrDefault').forEach(d => defFont = fontOfRPr(kids(d,'rPr')[0]) || defFont);
+  const byId = {}; kids(styles,'style').forEach(s => byId[s.getAttribute('w:styleId')] = s);
+  const sf = id => { for(let i=0, s=byId[id]; s && i<5; i++){ const f = fontOfRPr(kids(s,'rPr')[0]); if(f) return f; const b = kids(s,'basedOn')[0]; s = b && byId[b.getAttribute('w:val')]; } return null; };
+  function paraText(p){
+    const pPr = kids(p,'pPr')[0], ps = pPr && kids(pPr,'pStyle')[0];
+    const pFont = fontOfRPr(pPr && kids(pPr,'rPr')[0]) || (ps && sf(ps.getAttribute('w:val'))) || defFont;
+    const runs = kids(p,'r').map(r => {
+      let t = ''; for(const n of r.childNodes){ const ln = n.localName;
+        if(ln==='t') t += n.textContent; else if(ln==='tab') t += '\t'; else if(ln==='br'||ln==='cr') t += '\n'; }
+      const rs = kids(r,'rStyle')[0];
+      return {t, f: fontOfRPr(kids(r,'rPr')[0]) || (rs && sf(rs.getAttribute('w:val')))};
+    });
+    runs.forEach((r,i) => { if(!r.f){ const n = runs.slice(0,i).reverse().find(x=>x.f) || runs.slice(i+1).find(x=>x.f); r.f = n ? n.f : pFont; } });
+    let out = '', buf = '';
+    for(const r of runs){ if(isBijoyFont(r.f)) buf += r.t; else { out += bijoyToUnicode(buf) + r.t; buf = ''; } }
+    return (out + bijoyToUnicode(buf)).replace(/[ \u00a0]+/g,' ').trim();
+  }
+  const body = kids(xmlDoc(docXml),'body')[0], lines = [], tables = [];
+  (function walk(el){ for(const n of el.childNodes){
+    if(n.localName==='p') lines.push(paraText(n));
+    else if(n.localName==='tbl'){
+      const rows = kids(n,'tr').filter(tr => tr.parentNode===n).map(tr => kids(tr,'tc').filter(tc=>tc.parentNode===tr).map(tc => kids(tc,'p').map(paraText).filter(Boolean)));
+      tables.push(rows); rows.forEach(r => lines.push(r.map(c=>c.join('\n')).join('\t')));
+    } else if(n.childNodes && n.localName!=='sectPr') walk(n);
+  }})(body);
+  return {lines, tables};
+}
+
+const toEn = s => String(s).replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+const toBn = s => String(s).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+const CITIES = ['ঢাকা','চট্টগ্রাম','খুলনা','রাজশাহী','সিলেট','বরিশাল','রংপুর','ময়মনসিংহ','গাজীপুর','নারায়ণগঞ্জ','কুমিল্লা'];
+const FEMALE_T = /^(মিজ|মিসেস|বেগম|জনাবা)$/;
+function extractBasics(docs){
+  const persons = {}, signers = [], years = new Set(); let header = null;
+  const person = tin => persons[tin] ||= {tin};
+  for(const {lines, tables} of docs){
+    const text = toEn(lines.join('\n')).normalize('NFC');
+    // "জনাব নাম, টিআইএনঃ 123456789012, সার্কেল-97, কর অঞ্চল-5, ঢাকা"
+    const re = /(জনাবা|জনাব|মিজ|মিসেস|বেগম)\s+([^\s,:ঃ()\d][^,:ঃ()\d\n]{1,40}?)\s*,\s*টিআইএন\s*[ঃ:\-–]?\s*(\d{12})(?:\s*,\s*(?:কর\s*)?সার্কেল\s*[-–]\s*(\d+))?(?:\s*,\s*কর\s*অঞ্চল\s*[-–]\s*(\d+))?(?:\s*,\s*([^\s,।]+))?/g;
+    for(const m of text.matchAll(re)){
+      const p = person(m[3]);
+      p.name ||= m[2].trim(); p.title ||= m[1]; p.female ??= FEMALE_T.test(m[1]);
+      if(m[4]) p.circle ||= m[4]; if(m[5]) p.zone ||= m[5]; if(m[6] && CITIES.includes(m[6])) p.city ||= m[6];
+    }
+    // table rows such as the bank-search letter: name / spouse / NID / TIN / parents, with the address in the next cell
+    for(const t of tables) for(const row of t){
+      const cells = row.map(c => toEn(c.join('\n')));
+      const ci = cells.findIndex(c => /টিআইএন\s*[ঃ:]?\s*\d{12}/.test(c)); if(ci < 0) continue;
+      const c = cells[ci], p = person(c.match(/টিআইএন\s*[ঃ:]?\s*(\d{12})/)[1]);
+      const bnName = c.match(/(?:^|\n)\s*(?:\d+\.\s*)?[A-Za-z .]+\s+Or\s+([^\n]+)/i) || c.match(/(?:^|\n)(?:Or\s+)?([ঀ-৿][ঀ-৿ .]+)\n/);
+      if(bnName) p.name ||= bnName[1].trim();
+      const en = c.match(/^\s*(?:\d+\.\s*)?([A-Za-z][A-Za-z .]+?)\s*(?:\n|$)/); if(en) p.nameEn ||= en[1].trim();
+      if(/(?:^|\n)\s*স্ত্রী\s*[:ঃ]/.test(c)) p.female ??= false;
+      if(/(?:^|\n)\s*স্বামী\s*[:ঃ]/.test(c)) p.female ??= true;
+      const nid = c.match(/এনআইডি\s*[:ঃ]?\s*(\d{10,17})/); if(nid) p.nid ||= nid[1];
+      const addr = row.filter((_,i)=>i!==ci).map(x=>x.join('; ')).find(x => x && !/টিআইএন/.test(x));
+      if(addr) p.address ||= addr.replace(/\s*;\s*/g,'; ').replace(/\.\s*;/g,';').replace(/[;.]\s*$/,'');
+    }
+    // signatories: "(নাম)" followed by a designation that ends in "কমিশনার"
+    for(let i=0;i<lines.length;i++){
+      const names = [...lines[i].matchAll(/\(([ঀ-৿][ঀ-৿ .]{3,40})\)/g)].map(m=>m[1].trim());
+      if(!names.length || /\d|[০-৯]/.test(names.join(''))) continue;
+      const rest = (lines[i].replace(/\([^)]*\)/g,'') + ' ' + (lines[i+1]||'')).trim();
+      const des = [...rest.matchAll(/((?:সহকারী|যুগ্ম|অতিরিক্ত|উপ)\s*কর\s*কমিশনার|কর\s*কমিশনার)/g)].map(m=>m[1]);
+      names.forEach((n,k) => { if(des[k] && !signers.some(s=>s.name===n)) signers.push({name:n, designation:des[k]}); });
+    }
+    // office header: from "গণপ্রজাতন্ত্রী..." to the first line with a place name
+    const hi = lines.findIndex(l => /^গণপ্রজাতন্ত্রী/.test(l));
+    if(hi >= 0 && !header){ const h = []; for(let i=hi;i<Math.min(lines.length,hi+6);i++){ if(!lines[i]) continue; h.push(lines[i]); if(CITIES.some(c=>lines[i].includes(c)) && i>hi) break; }
+      if(h.length > 1) header = h.join('\n'); }
+    for(const m of text.matchAll(/(20\d\d)\s*[-–]\s*(20\d\d)\s*কর\s*(?:বছর|বর্ষ)/g)) years.add(m[1]+'-'+m[2]);
+  }
+  return {persons: Object.values(persons).filter(p=>p.name), signers, header, years: [...years].sort()};
+}
+function basicsFor(ex, p, sig){
+  const f = {};
+  if(p){ f.name = p.name; f.tin = p.tin;
+    if(p.circle || p.zone) f.jurisdiction = [p.circle && 'কর সার্কেল-'+toBn(p.circle), p.zone && 'কর অঞ্চল-'+toBn(String(p.zone).padStart(2,'0')), p.city].filter(Boolean).join(', ');
+    if(p.address) f.address = p.address;
+    if(p.female !== undefined) f.female = p.female; }
+  if(sig) f.signatory = sig;
+  if(ex.header) f.header = ex.header;
+  if(ex.years.length) f.period = toBn(ex.years.length===1 ? ex.years[0] : ex.years[0]+' হতে '+ex.years.at(-1));
+  return f;
+}
+
+/* ===== Word (.docx) export: converts the rendered report into WordprocessingML (no library) ===== */
+const CRC_T = (()=>{ const t = new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for(let i=0;i<u8.length;i++) c = CRC_T[(c^u8[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function zipStore(files){   // files: [[name, string]] → Blob (stored, no compression)
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  for(const [name, str] of files){
+    const nb = enc.encode(name), data = enc.encode(str), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(8,0,true);
+    h.setUint16(10,0,true); h.setUint16(12,0x21,true); h.setUint32(14,crc,true); h.setUint32(18,data.length,true); h.setUint32(22,data.length,true);
+    h.setUint16(26,nb.length,true); h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer), nb, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint16(10,0,true);
+    c.setUint16(12,0,true); c.setUint16(14,0x21,true); c.setUint32(16,crc,true); c.setUint32(20,data.length,true); c.setUint32(24,data.length,true);
+    c.setUint16(28,nb.length,true); c.setUint32(42,off,true);
+    central.push(new Uint8Array(c.buffer), nb);
+    off += 30 + nb.length + data.length;
+  }
+  const csize = central.reduce((a,b)=>a+b.length,0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,csize,true); e.setUint32(16,off,true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+const xe = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function reportToDocx(root, fontName){
+  const TW = 11906 - 2*737;                           // A4 width minus 13 mm margins, in twips
+  const run = (text, o={}) => {
+    const rp = `<w:rPr>${o.b?'<w:b/><w:bCs/>':''}${o.i?'<w:i/><w:iCs/>':''}${o.sz?`<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>`:''}${o.u?'<w:u w:val="single"/>':''}</w:rPr>`;
+    return String(text).split('\n').map((ln,i)=>`<w:r>${rp}${i?'<w:br/>':''}<w:t xml:space="preserve">${xe(ln)}</w:t></w:r>`).join('');
+  };
+  const para = (text, o={}) => `<w:p><w:pPr>${o.keep?'<w:keepNext/>':''}<w:spacing w:before="${o.before||0}" w:after="${o.after??60}"/>${o.ind?`<w:ind w:left="${o.ind}"/>`:''}${o.jc?`<w:jc w:val="${o.jc}"/>`:''}</w:pPr>${run(text,o)}</w:p>`;
+  const textOf = el => el.innerText.replace(/\u00a0/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+
+  function table(tbl, keepTogether){
+    const rows = [...tbl.rows];
+    let ncol = 0; rows.forEach(r => ncol = Math.max(ncol, [...r.cells].reduce((a,c)=>a+(c.colSpan||1),0)));
+    const ref = rows.find(r => r.cells.length === ncol) || rows[0];
+    let w = [...ref.cells].map(c => c.getBoundingClientRect().width); const tot = w.reduce((a,b)=>a+b,0) || 1;
+    w = w.map(x => Math.round(x/tot*TW));
+    let x = `<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:tblBorders>${['top','left','bottom','right','insideH','insideV'].map(s=>`<w:${s} w:val="single" w:sz="4" w:space="0" w:color="333333"/>`).join('')}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="60" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${w.map(v=>`<w:gridCol w:w="${v}"/>`).join('')}</w:tblGrid>`;
+    rows.forEach((r, ri) => {
+      const head = r.parentElement.tagName === 'THEAD', trc = r.className;
+      x += `<w:tr><w:trPr><w:cantSplit/>${head?'<w:tblHeader/>':''}</w:trPr>`;
+      let col = 0;
+      for(const c of r.cells){
+        const span = c.colSpan || 1, cw = w.slice(col, col+span).reduce((a,b)=>a+b,0); col += span;
+        const th = c.tagName === 'TH', cls = c.className;
+        const bold = th || /tot|key|sub/.test(trc);
+        const fill = th ? 'EEF0EF' : /tot|sub/.test(trc) ? 'F5F6F5' : null;
+        const jc = /\br\b/.test(cls) ? 'right' : (/\bc\b/.test(cls) || (th && c.style.textAlign !== 'left')) ? 'center' : 'left';
+        const keep = keepTogether && ri < rows.length - 1;
+        x += `<w:tc><w:tcPr><w:tcW w:w="${cw}" w:type="dxa"/>${span>1?`<w:gridSpan w:val="${span}"/>`:''}${fill?`<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>`:''}</w:tcPr>`
+          + para(textOf(c), {b:bold, jc, sz:18, after:0, keep, ind: /\bind\b/.test(cls) ? 280 : 0}) + `</w:tc>`;
+      }
+      x += `</w:tr>`;
+    });
+    return x + `</w:tbl>` + para('', {after:80, sz:8});
+  }
+  function kv(el){   // two-column label/value grid without borders
+    const cells = [...el.children], w1 = Math.round(TW*0.3);
+    let x = `<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid><w:gridCol w:w="${w1}"/><w:gridCol w:w="${TW-w1}"/></w:tblGrid>`;
+    for(let i=0;i<cells.length;i+=2) x += `<w:tr><w:tc><w:tcPr><w:tcW w:w="${w1}" w:type="dxa"/></w:tcPr>${para(textOf(cells[i]),{b:1,after:20})}</w:tc><w:tc><w:tcPr><w:tcW w:w="${TW-w1}" w:type="dxa"/></w:tcPr>${para(textOf(cells[i+1]||{innerText:''}),{after:20})}</w:tc></w:tr>`;
+    return x + `</w:tbl>` + para('', {after:60});
+  }
+  let body = '';
+  for(const el of root.children){
+    const t = el.tagName, cls = el.className;
+    if(t === 'H2') body += para(textOf(el), {b:1, u:1, jc:'center', sz:24, before:120, after:200});
+    else if(t === 'H3') body += para(textOf(el), {b:1, keep:1, before:200, after:80});
+    else if(t === 'H4') body += para(textOf(el), {b:1, keep:1, before:120, after:60});
+    else if(t === 'TABLE') body += table(el, false);
+    else if(cls.includes('calc')) body += table(el.querySelector('table'), true);
+    else if(cls.includes('kv')) body += kv(el);
+    else if(cls.includes('head')) body += para(textOf(el), {jc:'center', after:60});
+    else if(cls.includes('sign')) body += para(textOf(el), {jc:'center', ind: Math.round(TW*0.58), before:600});
+    else if(cls.includes('note')) body += para(textOf(el), {i:1, jc:'center', sz:19});
+    else if(t === 'P') body += textOf(el).split('\n').map(line => para(line, {jc:'both', after:100})).join('');
+  }
+  const F = xe(fontName);
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="794" w:right="737" w:bottom="794" w:left="737" w:header="397" w:footer="397" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${F}" w:hAnsi="${F}" w:eastAsia="${F}" w:cs="${F}"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="en-US" w:bidi="bn-BD"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="60" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`;
+  return zipStore([
+    ['[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`],
+    ['_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`],
+    ['word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ['word/document.xml', doc], ['word/styles.xml', styles],
+  ]);
+}
+
+</script>
+<script>
+const DEFAULTS = {"meta": {"header": "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার\nআয়কর গোয়েন্দা ও তদন্ত ইউনিট\nরাজস্ব ভবন (লেভেল-১০)\nআগারগাঁও, শের-ই-বাংলা নগর, ঢাকা-১২০৭", "title": "কর ফাঁকির তদন্ত প্রতিবেদন", "intro": "করদাতা জনাব {name} , টিআইএন-{tin}, {jurisdiction} এর একজন করদাতা। গোপনসূত্রে প্রাপ্ত করফাঁকির অভিযোগের প্রেক্ষিতে আয়কর গোয়েন্দা ও তদন্ত ইউনিট কর্তৃক করদাতার আয়কর ফাকিঁর তদন্তের সিদ্ধান্ত হয় এবং নিম্নস্বাক্ষরকারীকে তদন্তের দায়িত্ব প্রদান করা হয়। এ প্রেক্ষিতে করদাতার আয়কর নথি তলব করা হয় এবং নথিস্থ আয়কর রিটার্ন ও অন্যান্য রেকর্ডসমূহ পর্যালোচনা করা হয়। প্রাথমিক তদন্তে করফাঁকির অভিযোগের সত্যতা পাওয়ায় করদাতার আয়, ব্যয় ও বিনিয়োগ সংক্রান্ত তথ্য সংগ্রহের জন্য আয়কর আইন, ২০২৩ এর ২০০ ধারায় কার্যক্রম গ্রহণ করা হয় এবং ব্যাংক, আর্থিক প্রতিষ্ঠানসহ অন্যান্য প্রতিষ্ঠান থেকে তথ্য সংগ্রহ করা হয়। অনুসন্ধান ও তদন্তে প্রাপ্ত/সংগৃহিত তথ্য-প্রমাণাদি করদাতার ব্যাখ্যা এবং আয়কর রিটার্ন ও নথির রেকর্ড পর্যালোচনা করে উল্লিখিত করদাতার করফাকিঁর তদন্ত প্রতিবেদন নিম্নে  উপস্থাপন করা হলোঃ", "note": "* উল্লেখ্য এটি একটি সম্ভাব্য হিসাব মাত্র। কর নির্ধারণকালে/করদাতা কর্তৃক সংশোধিত রিটার্ন দাখিল/প্রমাণাদি দাখিল সাপেক্ষে করদায় কম বা বেশি হতে পারে।", "recommendations": "তদন্ত প্রতিবেদনের আলোকে নিম্নলিখিত সুপারিশসমূহ যথাযথভাবে কার্যকর করার নিমিত্ত সার্কেল কর্মকর্তা ও রেঞ্জ কর্মকর্তাকে প্রয়োজনীয় নির্দেশনা প্রদানের জন্য কর কমিশনার মহোদয়কে অনুরোধ করা হলোঃ\nক) তদন্ত প্রতিবেদন ও সন্নিবেশিত তথ্যের আলোকে প্রযোজ্য করবর্ষের কর মামলা ২১২ ধারায় পুনঃউন্মোচনের আইনানুগ ব্যবস্থা গ্রহণ;\nখ) কর নির্ধারণকালে আইন অনুযায়ী সংশ্লিষ্ট করবর্ষের সম্পদ পুনর্গঠন, করদায়, জরিমানা, সারচার্জ/ পরিবেশ সারচার্জ ও সরল সুদ আরোপ এবং বিধি মোতাবেক বিনিয়োগজনিত রেয়াত ও প্রমাণাদি সাপেক্ষে পরিশোধিত করের ক্রেডিট প্রদান;\nগ) কর নির্ধারণ পর্যায়ে ব্যাংক জমা পুঙ্খানুপুঙ্খভাবে পরীক্ষা/যাচাই করণ এবং এ বিষয়ে করদাতাকে ব্যাখ্যার সুযোগ প্রদান পূর্বক আইনানুগ ব্যবস্থা গ্রহণ;\nঘ) আয়কর আইন ২০২৩ এর ২১২ ধারায় পুনঃউন্মোচনপূর্বক কার্যক্রম গ্রহণকালে উদঘাটিত অন্যান্য কর ফাঁকির বিষয় থাকলে তা যথাযথভাবে করারোপন প্রক্রিয়ায় অন্তর্ভূক্তকরণ; ও\nঙ) করমামলাসমূহ দ্রুত নিষ্পত্তিপূর্বক কমিশনার আয়কর গোয়েন্দা ও তদন্ত ইউনিট বরাবর একটি পরিপালন প্রতিবেদন প্রেরণ।", "signature": "(পারিশা আহমেদ প্রধী)\nসহকারী কর কমিশনার \nআয়কর গোয়েন্দা ও তদন্ত ইউনিট\nজাতীয় রাজস্ব বোর্ড", "name": "", "tin": "", "taxpayerType": "ব্যক্তি", "address": "", "jurisdiction": "", "period": "", "observations": "", "female": false, "prevNW": "", "bengaliDigits": true, "font": "serif"}, "years": [{"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "70", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "60", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "50", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "40", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "30", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "20", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "10", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}], "bank": [[], [], [], [], [], [], []], "fdr": [[], [], [], [], [], [], []]};
+const STORE = 'taxReport.v1';
+let state, curYear = 0, curTab = 'general', banner = null, importTarget = null;
+const clone = o => JSON.parse(JSON.stringify(o));
+function load(){ try{ const s = localStorage.getItem(STORE); if(s){ const d = JSON.parse(s); if(d && d.meta && d.years) return migrate(d); } }catch(e){} return clone(DEFAULTS); }
+function persist(){ try{ localStorage.setItem(STORE, JSON.stringify(state)); }catch(e){} }
+state = load();
+
+/* ---------- formatting ---------- */
+const BND = '০১২৩৪৫৬৭৮৯';
+const bn = s => state.meta.bengaliDigits ? String(s).replace(/[0-9]/g, d => BND[d]) : String(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function lakh(intStr){ const neg = intStr[0]==='-'; if(neg) intStr = intStr.slice(1);
+  let out = intStr.length>3 ? intStr.slice(-3) : intStr, rest = intStr.length>3 ? intStr.slice(0,-3) : '';
+  while(rest.length>2){ out = rest.slice(-2)+','+out; rest = rest.slice(0,-2); }
+  if(rest) out = rest+','+out; return (neg?'-':'')+out; }
+function fmt(n){ n = Math.round(n || 0); if(Object.is(n,-0)) n = 0; return bn(lakh(String(n))); }
+function fmtDec(n){ const neg = n<0; n = Math.abs(n); const r = Math.round(n*100)/100; const [i,d] = r.toFixed(2).split('.');
+  return bn((neg?'-':'') + lakh(i) + (d==='00' ? '' : '.'+d)); }
+function fmtRaw(v){ const s = String(v ?? '').trim(); if(!s) return ''; if(s==='-') return '-'; const x = num(s); return isNaN(x) ? esc(s) : fmtDec(x); }
+const pct = r => bn(Math.round(r*100)) + '%';
+const yr = i => bn(YEARS[i]);
+
+/* ---------- field definitions ---------- */
+const YF = [
+ ['রিটার্ন ও নথি অনুযায়ী', 'As per the return and file', [
+  ['declaredIncome','প্রদর্শিত/নিরূপিত মোট আয়','Total income declared / assessed'],
+  ['assessSection','কর নির্ধারণের ধারা','Assessment section','text'],
+  ['declaredNW','প্রদর্শিত নীট সম্পদ','Declared net wealth'],
+  ['declaredExp','প্রদর্শিত পারিবারিক খরচ','Declared family expenses'],
+  ['exemptOther','কর অব্যাহতিপ্রাপ্ত আয়/অন্যান্য প্রাপ্তি/দান গ্রহণ','Tax-exempt income, other receipts and gifts — enter the total'],
+  ['finalIncome','চূড়ান্ত করদায় প্রযোজ্য আয়','Income under final tax'],
+  ['finalTax','চূড়ান্ত করদায় প্রযোজ্য আয়ের উপর কর','Tax on final-tax income'],
+  ['rebateInv','রেয়াতযোগ্য প্রকৃত বিনিয়োগ','Investment eligible for rebate'],
+  ['taxPaid','পরিশোধিত কর (নথি অনুসারে)','Tax paid as per file'] ]],
+ ['রিটার্নে প্রদর্শিত আয়', 'Income shown in the return, by head', [
+  ['shownInterest','সুদ আয়','Interest income'],
+  ...INCOME_HEADS.map(([,s,l]) => [s, l, '']) ]],
+ ['রিটার্নে (আইটি-১০বি) প্রদর্শিত স্থিতি ও কর', 'Balances and TDS shown in the return', [
+  ['shownFDR','প্রদর্শিত এফডিআর স্থিতি','FDR balance shown'],
+  ['shownBank','প্রদর্শিত অন্যান্য ব্যাংক স্থিতি','Other bank balance shown'],
+  ['shownTDS','প্রদর্শিত উৎসে কর্তিত কর','TDS shown'] ]],
+ ['তদন্তে প্রাপ্ত আয়', 'Income found in the investigation — copied from the amounts shown in the return; change any that differ. Interest comes from the bank tables.', 
+  INCOME_HEADS.map(([k,,l]) => [k, l, '']) ],
+ ['তদন্তে প্রাপ্ত অন্যান্য তথ্য', 'Other findings', [
+  ['priorTax','পূর্বের রিটার্নের সাথে/অন্যান্য পরিশোধিত আয়কর','Other income tax paid'],
+  ['familyExp','পারিবারিক খরচ (আয়কর ব্যতীত)','Family expenses found'],
+  ['dpsDeposit','ডিপিএস হিসাবে জমা','DPS deposits'] ]],
+ ['কর ও জরিমানা', 'Tax and penalty', [
+  ['envSurcharge','পরিবেশ সারচার্জ','Environmental surcharge'],
+  ['penaltyRate','২৭২ ধারার জরিমানার হার (%)','Penalty rate, %'] ]],
+];
+const RF = [['bank','ব্যাংকের নাম ও শাখা','text'],['type','হিসাবের ধরণ','text'],['acct','হিসাব নং','text'],
+  ['deposit','মোট জমা (সুদ ব্যতীত)'],['interest','ক্রেডিটকৃত সুদ'],['tds','আয়কর কর্তন'],['balance','স্থিতি']];
+
+/* ---------- binding helpers ---------- */
+function getP(path){ return path.split('.').reduce((o,k)=>o?.[k], state); }
+function setP(path, v){ const ks = path.split('.'); let o = state; for(let i=0;i<ks.length-1;i++) o = o[ks[i]]; o[ks.at(-1)] = v; }
+function field(path, label, sub, kind){
+  const v = getP(path) ?? '';
+  const id = 'i_'+path.replace(/\./g,'_');
+  let ctl;
+  if(kind==='area') ctl = `<textarea class="in" id="${id}" data-b="${path}" rows="5">${esc(v)}</textarea>`;
+  else if(kind==='text') ctl = `<input class="in" id="${id}" data-b="${path}" value="${esc(v)}">`;
+  else ctl = `<input class="in num${isNaN(num(v))?' bad':''}" id="${id}" data-b="${path}" data-num="1" inputmode="decimal" value="${esc(v)}">`;
+  return `<div class="f${kind==='area'?' wide':''}"><label for="${id}">${label}${sub?`<span>${sub}</span>`:''}</label>${ctl}</div>`;
+}
+function yearChips(){ return `<div class="years" role="group" aria-label="Tax year">${YEARS.map((y,i)=>`<button class="chip" data-year="${i}" aria-pressed="${i===curYear}">${y}</button>`).join('')}</div>`; }
+
+/* ---------- panes ---------- */
+const TABS = [['general','সাধারণ তথ্য'],['year','বার্ষিক তথ্য'],['bank','ব্যাংক হিসাব'],['fdr','এফডিআর'],['preview','প্রিভিউ']];
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = TABS.map(([k,l])=>`<button class="tab${k==='preview'?' preview-only':''}" role="tab" data-tab="${k}" aria-selected="${k===curTab}">${l}</button>`).join('');
+  document.body.classList.toggle('show-preview', curTab==='preview');
+}
+function renderPane(){
+  const p = document.getElementById('pane'); let h = '';
+  if(curTab==='general'){
+    const m = 'meta.';
+    h += `<div class="imp"><button class="btn dark" id="impDoc">Fill from Word files</button><span>Pick one or more .docx notes or letters (e.g. the file-opening note or the bank-search letter). Name, TIN, gender, circle and zone, address, signatory and office header are read from them, including SutonnyMJ (Bijoy) text. You review everything before it is applied.</span></div>`;
+    if(review) h += renderReview();
+    h += `<div class="legend-note"><i></i>Blue fields are inputs, as in the workbook. Amounts accept arithmetic, e.g. <code>=9583*5+136129</code>.</div>`;
+    h += `<fieldset><legend>করদাতার তথ্য <span class="muted" style="font-weight:400;color:var(--muted)">Taxpayer</span></legend><div class="grid">`+
+      field(m+'name','করদাতার নাম','Name','text')+field(m+'tin','টি আই এন','TIN','text')+
+      field(m+'taxpayerType','করদাতার ধরণ','Taxpayer type','text')+field(m+'jurisdiction','অধিক্ষেত্র','Jurisdiction','text')+
+      field(m+'address','ঠিকানা','Address','text')+field(m+'period','তদন্ত সংশ্লিষ্ট করবর্ষ','Years under investigation','text')+
+      `<div class="f"><label for="i_gender">লিঙ্গ<span>Gender (sets the tax-free threshold)</span></label><select class="in" id="i_gender" data-b="meta.female" data-bool="1"><option value="0"${!state.meta.female?' selected':''}>পুরুষ — Male</option><option value="1"${state.meta.female?' selected':''}>মহিলা — Female (+৳50,000 threshold)</option></select></div>`+
+      field(m+'prevNW','২০১৯-২০২০ এর পূর্ববর্তী বছরের নীট সম্পদ','Net wealth of the year before 2019-20')+
+      `</div></fieldset>`;
+    h += `<fieldset><legend>প্রতিবেদনের লেখা <span style="font-weight:400;color:var(--muted)">Report text</span></legend><div class="grid">`+
+      field(m+'header','শিরোনাম (অফিস)','Office header','area')+field(m+'title','প্রতিবেদনের নাম','Title','text')+
+      `<div class="f wide"><p class="hint" style="margin:0">In the introduction, {name}, {tin} and {jurisdiction} are filled in from the fields above.</p></div>`+
+      field(m+'intro','ভূমিকা','Introduction','area')+field(m+'observations','৬। পর্যবেক্ষণসমূহ','Observations','area')+
+      field(m+'note','টীকা','Footnote under the summary','area')+field(m+'recommendations','৮। সুপারিশ','Recommendations','area')+
+      field(m+'signature','স্বাক্ষরকারী','Signatory block','area')+
+      `<div class="f"><label for="i_digits">সংখ্যা<span>Digits in the report</span></label><select class="in" id="i_digits" data-b="meta.bengaliDigits" data-bool="1"><option value="1"${state.meta.bengaliDigits?' selected':''}>বাংলা ১২৩</option><option value="0"${!state.meta.bengaliDigits?' selected':''}>English 123</option></select></div>`+
+      `<div class="f"><label for="i_font">ফন্ট<span>Report font</span></label><select class="in" id="i_font" data-b="meta.font"><option value="serif"${state.meta.font!=='sans'?' selected':''}>Noto Serif Bengali</option><option value="sans"${state.meta.font==='sans'?' selected':''}>Nikosh / Noto Sans Bengali</option></select></div>`+
+      `</div></fieldset>`;
+    h += NOTES;
+  } else if(curTab==='year'){
+    h += yearChips() + `<div class="sum" id="ysum"></div>`;
+    for(const [t,st,fs] of YF){
+      h += `<fieldset><legend>${t} <span style="font-weight:400;color:var(--muted)">${st}</span></legend><div class="grid">`;
+      for(const [k,l,s,kind] of fs) h += field(`years.${curYear}.${k}`, l, s, kind);
+      h += `</div></fieldset>`;
+    }
+  } else if(curTab==='bank'||curTab==='fdr'){
+    const names = {bank:'সঞ্চয়ী ও চলতি হিসাব (এফডিআর ব্যতীত)', fdr:'এফডিআর হিসাব'};
+    const rows = state[curTab][curYear] ||= [];
+    h += `<div class="imp"><button class="btn dark" id="impTab">Import from Excel</button><span>Reads the <b>${{bank:'Bank Details (Non-FD)',fdr:'FDR Details'}[curTab]}</b> sheet of an .xlsx file for all years at once. Each year needs a title like “করবর্ষঃ ২০১৯-২০২০”, a header row with “ব্যাংকের নাম ও শাখা”, and ends at the “মোট” row — the same layout as your workbook.</span></div>`;
+    h += yearChips() + `<p class="hint">${names[curTab]} — ${YEARS[curYear]}. English bank names and account types turn into Bangla when you leave the box (“Branch” becomes “শাখা”). To paste from Excel, copy one or more rows there and paste into any box here — the cells fill across and new rows are added. Empty rows are left out of the report.</p>`;
+    h += `<div class="rows"><table><thead><tr><th></th>${RF.map(f=>`<th>${f[1]}</th>`).join('')}<th></th></tr></thead><tbody>`;
+    if(!rows.length) h += `<tr><td colspan="9" class="empty">No accounts for this year yet. Add one below.</td></tr>`;
+    rows.forEach((r,i)=>{
+      h += `<tr><td class="n">${i+1}</td>` + RF.map(([k,,kind])=>{
+        const path = `${curTab}.${curYear}.${i}.${k}`, v = r[k] ?? '';
+        return kind==='text' ? `<td><input class="in" data-b="${path}" value="${esc(v)}" aria-label="${k}"></td>`
+          : `<td><input class="in num${isNaN(num(v))?' bad':''}" data-b="${path}" data-num="1" inputmode="decimal" value="${esc(v)}" aria-label="${k}"></td>`;
+      }).join('') + `<td><button class="btn danger" data-del="${i}" aria-label="Delete row ${i+1}">✕</button></td></tr>`;
+    });
+    h += `</tbody><tfoot id="rowTot"></tfoot></table></div><div class="acts" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn dark" id="addRow">+ Add account</button><button class="btn dark" id="toBangla" title="Convert English names and account types in every year">সব ইংরেজি নাম বাংলায় রূপান্তর</button></div>`;
+  }
+  if(banner){ h = `<div class="banner${banner.err?' err':''}" role="status">${banner.msg}</div>` + h; banner = null; }
+  p.innerHTML = h;
+  updateLive();
+}
+
+const NOTES = `<details class="notes"><summary>Changes from the Excel workbook</summary><ol>
+<li>FDR deposits now total every row (the 2019-20 total skipped rows 3–18).</li>
+<li>Amounts typed as text (e.g. “15,00,000”) are now counted; Excel ignored the 2023-24 FDR deposit of ১৫,০০,০০০.</li>
+<li>One calculation drives the whole report. Income, other tax paid and family expenses found in the investigation now affect the assessed income and the tax.</li>
+<li>Undisclosed income is worked out head by head — interest plus the seven income heads (ক–ছ), found minus shown — so declared income under one head cannot hide another.</li>
+<li>Capital gains (now head ঙ) count in every year, not only 2023-24.</li>
+<li>The 2022-23 rebate uses that year’s income; 2025-26 now gets a rebate (lowest of 3% of income, 15% of investment, ৳10 lakh). The rebate can never exceed the tax.</li>
+<li>Surcharge bands no longer break at an exact threshold; the rate applies when net wealth exceeds it.</li>
+<li>Evaded tax is never negative in any year; penalty rates are editable per year.</li>
+<li>The unexplained “−৫০,০০০” line and the hardcoded deductions (২,২০,১১,৪৪৩ and ৫,১৭,৮০০) are removed. The ৳50,000 now applies only to female taxpayers, as in the workbook’s tax formulas.</li>
+<li>Section numbering (৩.২ appeared twice; ৮ was missing) and the payment labels (ঘ was used twice) are corrected; the summary table totals every column.</li>
+</ol></details>`;
+
+/* ---------- live updates ---------- */
+let res = [];
+function recalc(){ res = computeAll(state); }
+function updateLive(){
+  recalc();
+  const ys = document.getElementById('ysum');
+  if(ys){ const r = res[curYear];
+    ys.innerHTML = `<span>নিরূপিত আয় · Assessed income</span><b>${fmt(r.assessed)}</b><span>প্রদেয় কর ও সারচার্জ · Tax + surcharge</span><b>${fmt(r.totalTax)}</b><span>প্রদত্ত কর · Tax paid</span><b>${fmt(r.totalPaid)}</b><span>ফাঁকিকৃত কর · Evaded tax</span><b>${fmt(r.evaded)}</b><span class="big">জরিমানাসহ মোট · Total with penalty</span><b class="big">${fmt(r.grand)}</b>`; }
+  const rt = document.getElementById('rowTot');
+  if(rt){ const rows = state[curTab][curYear] || [];
+    const s = k => rows.reduce((a,r)=>a+(isNaN(num(r[k]))?0:num(r[k])),0);
+    rt.innerHTML = `<tr class="tot"><td></td><td colspan="3" style="text-align:left">মোট · Total</td>${['deposit','interest','tds','balance'].map(k=>`<td>${fmtDec(s(k))}</td>`).join('')}<td></td></tr>`; }
+  renderReport(); fitPaper();
+}
+let tmr; function schedule(){ clearTimeout(tmr); tmr = setTimeout(()=>{ updateLive(); persist(); }, 160); }
+
+/* ---------- report ---------- */
+let vis = [];   // years that appear in the report
+function yearTable(title, rowsDef){ // rowsDef: [label, fn(r), cls, hideIfZero]
+  let h = `<table><thead><tr><th style="width:30%">${title}</th>${vis.map(r=>`<th>${yr(r.y)}</th>`).join('')}</tr></thead><tbody>`;
+  for(const [l,f,cls,hideZero] of rowsDef){
+    if(hideZero && vis.every(r => !Math.round(f(r)))) continue;
+    h += `<tr class="${cls||''}"><td>${l}</td>${vis.map(r=>`<td class="r">${fmt(f(r))}</td>`).join('')}</tr>`; }
+  return h + `</tbody></table>`;
+}
+function acctTables(key, secNo, secTitle){
+  let h = `<h4>${secNo} ${secTitle}</h4>`;
+  vis.forEach(({y})=>{
+    const rows = (state[key][y]||[]).filter(r=>RF.some(([k])=>String(r[k]??'').trim()));
+    h += `<table><thead><tr><th colspan="8" style="text-align:left">করবর্ষঃ ${yr(y)}</th></tr><tr><th style="width:5%">ক্রমিক</th><th style="width:22%">ব্যাংকের নাম ও শাখা</th><th>হিসাবের ধরণ</th><th>হিসাব নং</th><th>মোট জমা (ক্রেডিটকৃত সুদ ব্যতীত)</th><th>মোট ক্রেডিটকৃত সুদ</th><th>আয়কর কর্তন</th><th>স্থিতি</th></tr></thead><tbody>`;
+    if(!rows.length) h += `<tr><td colspan="8" class="c muted">তথ্য পাওয়া যায়নি</td></tr>`;
+    rows.forEach((r,i)=>{ h += `<tr><td class="c">${bn(i+1)}</td><td>${esc(r.bank)}</td><td>${esc(r.type)}</td><td>${esc(bn(r.acct||''))}</td><td class="r">${fmtRaw(r.deposit)}</td><td class="r">${fmtRaw(r.interest)}</td><td class="r">${fmtRaw(r.tds)}</td><td class="r">${fmtRaw(r.balance)}</td></tr>`; });
+    const s = k => (state[key][y]||[]).reduce((a,r)=>a+(isNaN(num(r[k]))?0:num(r[k])),0);
+    h += `<tr class="tot"><td colspan="4" class="c">মোট</td>${['deposit','interest','tds','balance'].map(k=>`<td class="r">${fmtDec(s(k))}</td>`).join('')}</tr></tbody></table>`;
+  });
+  return h;
+}
+function calcBlock(r){
+  const L = (label, col, val, opt={}) => { const c = ['','','']; c[col] = fmt(val);
+    return `<tr class="${opt.cls||''}"><td class="${opt.ind?'ind':''}">${label}</td><td class="r">${c[0]}</td><td class="r">${c[1]}</td><td class="r">${c[2]}</td></tr>`; };
+  const H = t => `<tr class="sub"><td colspan="4">${t}</td></tr>`;
+  const Y = state.years[r.y];
+  let h = `<div class="calc"><table><thead><tr><th colspan="4" style="text-align:left">করবর্ষঃ ${yr(r.y)}</th></tr><tr><th>বিবরণ</th><th>টাকা</th><th>টাকা</th><th>টাকা</th></tr></thead><tbody>`;
+  h += L('প্রদর্শিত মোট করযোগ্য আয়',0,r.declaredIncome)+L('অপ্রদর্শিত মোট করযোগ্য আয়',0,r.undiscIncome);
+  h += `<tr class="key"><td>মোট করযোগ্য আয়</td><td class="r">${fmt(r.totalTaxable)}</td><td></td><td class="r">${fmt(r.totalTaxable)}</td></tr>`;
+  h += H('সম্পদ বিবরণী পর্যালোচনাঃ');
+  h += L('প্রদর্শিত নীট পরিসম্পদ',0,r.declaredNW)+L('(+) মোট অপ্রদর্শিত বিনিয়োগ',0,r.undiscInv,{ind:1});
+  h += L('পুনর্গঠিত নীট পরিসম্পদ',1,r.rebuilt,{cls:'key'})+L('(−) পূর্বের করবর্ষে প্রদর্শিত/পুনর্গঠিত নীট পরিসম্পদ',1,r.prevRebuilt,{ind:1});
+  h += L('সম্পদের পরিবৃদ্ধি',1,r.growth)+L('(+) প্রদর্শিত মোট খরচ',0,r.shownExp,{ind:1})+L('(+) অপ্রদর্শিত ব্যয়',0,r.undiscExp,{ind:1});
+  h += L('পুনর্গঠিত মোট খরচ',1,r.totalExp)+L('খরচসহ মোট সম্পদের পরিবৃদ্ধি',1,r.growthExp,{cls:'key'});
+  h += H('বাদঃ অর্জিত তহবিল সমূহ');
+  h += L('প্রাপ্ত মোট করযোগ্য আয়',0,r.totalTaxable,{ind:1})+L('কর অব্যাহতিপ্রাপ্ত আয়/অন্যান্য প্রাপ্তি/দান গ্রহণ',0,r.exempt,{ind:1});
+  h += L('উৎস বহির্ভূত আয়',2,r.unexplained)+L('নিরূপিত মোট করযোগ্য আয়',2,r.assessed,{cls:'key'});
+  if(r.finalIncome) h += L('(−) চূড়ান্ত করদায় প্রযোজ্য আয়',0,r.finalIncome,{ind:1});
+  h += L('নিয়মিত করহারে করযোগ্য আয়'+(state.meta.female?' (মহিলা করদাতা: করমুক্ত সীমা '+bn('50,000')+' টাকা বেশি)':''),2,r.regular);
+  h += H('সম্ভাব্য প্রদেয় কর');
+  h += L('নিরূপিত আয়ের উপর প্রদেয় কর',0,r.tax)+L('বাদঃ বিনিয়োগজনিত রেয়াত',0,r.rebate,{ind:1})+L('রেয়াত পরবর্তী প্রদেয় কর (ক)',0,r.afterRebate);
+  h += L(`প্রদেয় সারচার্জ (খ)${r.surRate?' ('+pct(r.surRate)+')':''}`,0,r.surcharge)+L('প্রদেয় পরিবেশ সারচার্জ (গ)',0,r.env);
+  h += L('মোট প্রদেয় কর ও সারচার্জ (ঘ) = (ক+খ+গ)',1,r.totalTax,{cls:'key'});
+  h += L('প্রদর্শিত মোট পরিশোধিত কর ও সারচার্জ (ঙ)',0,r.paid,{ind:1})+L('অপ্রদর্শিত উৎসে ও অগ্রিম পরিশোধিত কর (চ)',0,r.undiscTds,{ind:1});
+  h += L('মোট প্রদত্ত কর (ছ) = (ঙ+চ)',1,r.totalPaid)+L('ফাঁকিকৃত কর (ঘ−ছ)',1,r.evaded,{cls:'key'});
+  h += L(`যোগঃ ২৭২ ধারার জরিমানা (${pct(r.penRate)})`,1,r.penalty,{ind:1});
+  h += L('সম্ভাব্য জরিমানাসহ মোট প্রদেয় কর',2,r.grand,{cls:'key'});
+  return h + `</tbody></table></div>`;
+}
+// §1 "source of income": the heads with an amount shown in the return, e.g. "সুদ আয়, চাকরি হইতে আয়"
+function incomeSources(Y){
+  const list = [];
+  if(num(Y.shownInterest) > 0) list.push('সুদ আয়');
+  for(const [,s,l] of INCOME_HEADS) if(num(Y[s]) > 0) list.push(l.replace(/^\([^)]*\)\s*/,''));
+  return list.join(', ');
+}
+function reportFileName(){
+  const nm = String(state.meta.name||'').trim().replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ');
+  return 'কর ফাঁকির তদন্ত প্রতিবেদন' + (nm ? '-' + nm : '');
+}
+function renderReport(){
+  const m = state.meta, el = document.getElementById('report');
+  el.className = 'rep' + (m.font==='sans' ? ' sans' : '');
+  const intro = String(m.intro||'').replace(/\{name\}/g,m.name||'').replace(/\{tin\}/g,m.tin||'').replace(/\{jurisdiction\}/g,m.jurisdiction||'');
+  vis = res.filter(r => r.included);
+  if(!vis.length){ el.innerHTML = `<div class="head">${esc(m.header)}</div><h2>${esc(m.title)}</h2><p class="muted" style="text-align:center">কোনো করবর্ষের তথ্য এখনো দেওয়া হয়নি। বার্ষিক তথ্য বা ব্যাংক হিসাব ট্যাবে তথ্য দিলে প্রতিবেদন এখানে তৈরি হবে।</p>`; return; }
+  let h = `<div class="head">${esc(m.header)}</div><h2>${esc(m.title)}</h2>`;
+  h += `<div class="kv"><div>ক) করদাতার নামঃ</div><div>${esc(m.name)}</div><div>খ) টি আই এনঃ</div><div>${esc(bn(m.tin||''))}</div><div>গ) করদাতার ধরণঃ</div><div>${esc(m.taxpayerType)}</div><div>ঘ) ঠিকানাঃ</div><div>${esc(m.address)}</div><div>ঙ) অধিক্ষেত্রঃ</div><div>${esc(m.jurisdiction)}</div><div>চ) তদন্ত সংশ্লিষ্ট করবর্ষঃ</div><div>${esc(m.period)}</div></div>`;
+  h += `<p>${esc(bn(intro))}</p>`;
+  h += `<h3>১। প্রদর্শিত মোট আয় ও কর সংক্রান্ত তথ্যঃ</h3><table><thead><tr><th>করবর্ষ</th><th>আয়ের উৎস</th><th>কর নির্ধারণের ধারা</th><th>প্রদর্শিত/নিরূপিত আয়</th><th>পরিশোধিত কর (নথি অনুসারে)</th></tr></thead><tbody>`;
+  vis.forEach(r=>{ const Y = state.years[r.y]; h += `<tr><td class="c">${yr(r.y)}</td><td>${esc(incomeSources(Y))}</td><td>${esc(Y.assessSection)}</td><td class="r">${fmt(r.declaredIncome)}</td><td class="r">${fmt(r.paid)}</td></tr>`; });
+  h += `</tbody></table>`;
+  h += `<h3>২। প্রাপ্ত ব্যাংক/আর্থিক হিসাব/বিবিধ তথ্যঃ</h3>` + acctTables('bank','২.১','সঞ্চয়ী ও চলতি হিসাবঃ') + acctTables('fdr','২.২','এফডিআর হিসাবঃ');
+  h += `<h3>৩। অপ্রদর্শিত আয়, ব্যয়, বিনিয়োগ ও সম্পদের সার-সংক্ষেপঃ</h3>`;
+  h += `<h4>৩.১ অপ্রদর্শিত করযোগ্য আয়</h4>` + yearTable('তদন্তে প্রাপ্ত তথ্য/করবর্ষ',[
+    ['সুদ আয়',r=>r.interest,'',1], ...INCOME_HEADS.map(([,,l],i)=>[l, r=>r.heads[i], '', 1]), ['মোট প্রাপ্ত করযোগ্য আয়',r=>r.foundIncome,'tot'],
+    ['রিটার্নে প্রদর্শিত (সুদসহ সকল খাতের আয়)',r=>r.shownComp],['অপ্রদর্শিত করযোগ্য আয়',r=>r.undiscIncome,'tot']]);
+  h += `<h4>৩.২ অপ্রদর্শিত ব্যয়</h4>` + yearTable('তদন্তে প্রাপ্ত তথ্য/করবর্ষ',[
+    ['উৎসে পরিশোধিত কর',r=>r.tdsFound],['পূর্বের রিটার্নের সাথে/অন্যান্য পরিশোধিত আয়কর',r=>r.priorTax],['পারিবারিক খরচ (আয়কর ব্যতীত)',r=>r.familyExp],
+    ['প্রাপ্ত মোট ব্যয় ও ক্ষতি',r=>r.foundExp,'tot'],['প্রদর্শিত মোট ব্যয় ও ক্ষতি',r=>r.shownExp],['অপ্রদর্শিত ব্যয় ও ক্ষতি',r=>r.undiscExp,'tot']]);
+  h += `<h4>৩.৩ অপ্রদর্শিত বিনিয়োগ</h4>` + yearTable('তদন্তে প্রাপ্ত তথ্য/করবর্ষ',[
+    ['এফডিআর এর স্থিতি',r=>r.fdrBal],['অন্যান্য হিসাবের স্থিতি ও নগদ অর্থ',r=>r.bankBal],
+    ['প্রাপ্ত মোট বিনিয়োগ',r=>r.foundInv,'tot'],['প্রদর্শিত স্থিতি',r=>r.shownInv],['মোট অপ্রদর্শিত বিনিয়োগ',r=>r.undiscInv,'tot']]);
+  h += `<h3>৪। ব্যাংক জমা বিশ্লেষণঃ</h3>` + yearTable('হিসাবের ধরণ/করবর্ষ',[
+    ['এফডিআর ব্যতীত অন্যান্য হিসাব',r=>r.bankDep],['এফডিআর হিসাব',r=>r.fdrDep],['ডিপিএস হিসাব',r=>r.dps],['মোট জমা',r=>r.totalDep,'tot']]);
+  h += `<h3>৫। সম্ভাব্য কর পরিগণনাঃ</h3>` + vis.map(calcBlock).join('');
+  h += `<h3>৬। পর্যবেক্ষণসমূহঃ</h3><p>${esc(bn(m.observations||''))||'&nbsp;'}</p>`;
+  h += `<h3>৭। বিভিন্ন করবর্ষে সম্ভাব্য কর ফাঁকি ও জরিমানার পরিমাণঃ</h3><table><thead><tr><th>করবর্ষ</th><th>সম্ভাব্য নিরূপিত আয়</th><th>সম্ভাব্য ফাঁকিকৃত কর</th><th>সম্ভাব্য জরিমানা</th><th>সম্ভাব্য মোট করদায়</th></tr></thead><tbody>`;
+  vis.forEach(r=>{ h += `<tr><td class="c">${yr(r.y)}</td><td class="r">${fmt(r.assessed)}</td><td class="r">${fmt(r.evaded)}</td><td class="r">${fmt(r.penalty)}</td><td class="r">${fmt(r.grand)}</td></tr>`; });
+  const T = k => vis.reduce((a,r)=>a+r[k],0);
+  h += `<tr class="tot"><td class="c">মোটঃ</td><td class="r">${fmt(T('assessed'))}</td><td class="r">${fmt(T('evaded'))}</td><td class="r">${fmt(T('penalty'))}</td><td class="r">${fmt(T('grand'))}</td></tr></tbody></table>`;
+  h += `<p class="note">${esc(m.note)}</p>`;
+  h += `<h3>৮। সুপারিশঃ</h3><p>${esc(m.recommendations)}</p><div class="sign">${esc(m.signature)}</div>`;
+  el.innerHTML = h;
+}
+function fitPaper(){
+  const v = document.getElementById('viewer'), w = document.getElementById('paperWrap');
+  if(!v.offsetWidth) return;
+  const paper = w.firstElementChild; w.style.transform = 'none'; w.style.height = ''; w.style.width = '';
+  const avail = v.clientWidth - 24, pw = paper.offsetWidth, sc = Math.min(1, avail/pw);
+  w.style.transform = `scale(${sc})`; w.style.width = pw*sc+'px'; w.style.height = paper.offsetHeight*sc+'px';
+}
+
+/* ---------- file delivery (browser download, or the Android app's save dialog) ---------- */
+function deliver(blob, name){
+  if(window.AndroidBridge){
+    const rd = new FileReader();
+    rd.onload = ()=> AndroidBridge.saveFile(name, blob.type || 'application/octet-stream', String(rd.result).split(',')[1]);
+    rd.readAsDataURL(blob); return;
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+/* ---------- Bangla conversion, Excel paste, shown → found copy ---------- */
+const banglaRow = r => ({...r, bank: toBanglaText(r.bank||''), type: toBanglaText(r.type||'')});
+const FOUND_OF = Object.fromEntries(INCOME_HEADS.map(([k,s]) => [s, k]));
+document.addEventListener('focusin', e=>{ const t = e.target; if(t.dataset && t.dataset.b) t.dataset.prev = t.value; });
+document.addEventListener('change', e=>{
+  const t = e.target, path = t.dataset && t.dataset.b; if(!path) return;
+  const m = path.match(/^(bank|fdr)\.(\d+)\.(\d+)\.(bank|type)$/);
+  if(m){ const v = toBanglaText(t.value); if(v !== t.value){ t.value = v; setP(path, v); updateLive(); persist(); } }
+});
+// Typing an amount "shown in the return" copies it to the matching "found" box, unless that box was changed by hand.
+document.addEventListener('input', e=>{
+  const t = e.target, path = t.dataset && t.dataset.b; if(!path) return;
+  const m = path.match(/^years\.(\d+)\.(\w+)$/); if(!m || !FOUND_OF[m[2]]) return;
+  const Y = state.years[+m[1]], fk = FOUND_OF[m[2]], prev = t.dataset.prev ?? '';
+  if(String(Y[fk] ?? '') === '' || String(Y[fk]) === prev){
+    Y[fk] = t.value; const fi = document.querySelector(`[data-b="years.${m[1]}.${fk}"]`);
+    if(fi){ fi.value = t.value; fi.classList.toggle('bad', isNaN(num(t.value))); }
+  }
+  t.dataset.prev = t.value;
+});
+// Paste rows copied from Excel (tab-separated) into the bank / FDR table
+document.addEventListener('paste', e=>{
+  const t = e.target, path = t.dataset && t.dataset.b;
+  const m = path && path.match(/^(bank|fdr)\.(\d+)\.(\d+)\.(\w+)$/); if(!m) return;
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if(!text || (!text.includes('\t') && !/\n./.test(text.trim()))) return;        // a single value: let the box handle it
+  e.preventDefault();
+  const [, kind, y, r0, key] = m, rows = state[kind][+y] ||= [];
+  const keys = RF.map(f => f[0]), c0 = keys.indexOf(key);
+  const lines = text.replace(/\r/g,'').replace(/\n+$/,'').split('\n');
+  lines.forEach((line, li) => {
+    const cells = line.split('\t'), ri = +r0 + li;
+    // rows copied from column A of the workbook start with a serial number and/or tax year: skip those
+    while(c0 === 0 && cells.length > keys.length && (/^\s*[\d০-৯]{0,3}\.?\s*$/.test(cells[0]) || yearOf(cells[0]) >= 0)) cells.shift();
+    rows[ri] ||= {bank:'',type:'',acct:'',deposit:'',interest:'',tds:'',balance:''};
+    cells.forEach((v, ci) => { const k = keys[c0 + ci]; if(k) rows[ri][k] = v.trim().replace(/^"|"$/g,''); });
+    rows[ri] = banglaRow(rows[ri]);
+  });
+  persist(); renderPane();
+  banner = null;
+  const first = document.querySelector(`[data-b="${kind}.${y}.${r0}.${key}"]`); if(first) first.focus();
+});
+/* ---------- events ---------- */
+document.addEventListener('input', e=>{
+  const t = e.target, path = t.dataset.b; if(!path) return;
+  if(t.dataset.bool) setP(path, t.value==='1'); else setP(path, t.value);
+  if(t.dataset.num) t.classList.toggle('bad', isNaN(num(t.value)));
+  schedule();
+});
+document.addEventListener('change', e=>{ if(e.target.tagName==='SELECT' && e.target.dataset.b){ const t=e.target; setP(t.dataset.b, t.dataset.bool ? t.value==='1' : t.value); updateLive(); persist(); } });
+document.addEventListener('click', e=>{
+  const t = e.target.closest('button'); if(!t) return;
+  if(t.dataset.tab){ curTab = t.dataset.tab; renderTabs(); if(curTab!=='preview') renderPane(); else updateLive(); window.scrollTo(0,0); }
+  else if(t.dataset.year){ curYear = +t.dataset.year; renderPane(); }
+  else if(t.dataset.del){ state[curTab][curYear].splice(+t.dataset.del,1); renderPane(); persist(); }
+  else if(t.id==='toBangla'){ for(const k of ['bank','fdr']) state[k] = state[k].map(ys => (ys||[]).map(banglaRow)); persist(); renderPane(); }
+  else if(t.id==='addRow'){ (state[curTab][curYear] ||= []).push({bank:'',type:'',acct:'',deposit:'',interest:'',tds:'',balance:''}); renderPane(); persist();
+    const ins = document.querySelectorAll('.rows tbody tr:last-child input'); if(ins[0]) ins[0].focus(); }
+});
+document.getElementById('bPrint').onclick = ()=>{ updateLive();
+  const name = reportFileName();
+  if(window.AndroidBridge) AndroidBridge.printReport(name);
+  else { const old = document.title; document.title = name; window.print(); setTimeout(()=>{ document.title = old; }, 1000); } };
+document.getElementById('bSave').onclick = ()=>{
+  deliver(new Blob([JSON.stringify(state,null,1)],{type:'application/json'}), reportFileName() + ' (তথ্য).json');
+};
+document.getElementById('bOpen').onclick = ()=>document.getElementById('fileIn').click();
+document.getElementById('fileIn').onchange = e=>{
+  const f = e.target.files[0]; if(!f) return; const rd = new FileReader();
+  rd.onload = ()=>{ try{ const d = JSON.parse(rd.result);
+      if(!d.meta || !Array.isArray(d.years) || d.years.length!==7) throw new Error('This file is not a saved report: it has no taxpayer section or does not have 7 years.');
+      state = migrate(d); persist(); renderTabs(); renderPane();
+    }catch(err){ alert('Could not open the file. ' + err.message); } };
+  rd.readAsText(f); e.target.value = '';
+};
+document.getElementById('bReset').onclick = ()=>{
+  if(!confirm('Start a new report? The taxpayer details, yearly figures and bank/FDR accounts will be cleared. Save the current data first if you need it.')) return;
+  const keep = {}; for(const k of ['header','title','intro','note','recommendations','signature','bengaliDigits','font']) keep[k] = state.meta[k];
+  state = clone(DEFAULTS); Object.assign(state.meta, keep); curYear = 0; persist(); renderTabs(); renderPane(); };
+
+document.addEventListener('click', e=>{ if(e.target.id==='impTab'){ importTarget = curTab; document.getElementById('xlsIn').click(); } });
+const KIND_BN = {bank:'ব্যাংক হিসাব (এফডিআর ব্যতীত)', fdr:'এফডিআর'};
+document.getElementById('xlsIn').onchange = async e=>{ const f = e.target.files[0]; e.target.value = ''; if(f) await importXlsx(f); };
+async function importXlsx(f){
+  try{
+    const sheets = await readWorkbook(await f.arrayBuffer());
+    const found = {};
+    for(const s of sheets){ const k = sheetKind(s.name); if(!k || (importTarget && k !== importTarget) || found[k]) continue; found[k] = parseAccountSheet(s); }
+    if(importTarget && !found[importTarget]){          // sheet not named as expected: use the first sheet that has accounts
+      for(const s of sheets){ const pr = parseAccountSheet(s); if(Object.values(pr).some(a=>a.length)){ found[importTarget] = pr; break; } }
+    }
+    const kinds = Object.keys(found).filter(k => Object.keys(found[k]).length);
+    if(!kinds.length) throw new Error(`No account tables were found in “${esc(f.name)}”. Each year's block needs a title such as “করবর্ষঃ ২০১৯-২০২০” and a header row with “ব্যাংকের নাম ও শাখা”, as in your workbook.`);
+    const lines = kinds.map(k => { const ys = Object.keys(found[k]).map(Number).sort(); const n = ys.reduce((a,y)=>a+found[k][y].length,0);
+      return `${KIND_BN[k]}: ${n} accounts in ${ys.length} year(s) (${ys.map(y=>YEARS[y]).join(', ')})`; });
+    if(!confirm('Found in ' + f.name + ':\n\n' + lines.join('\n') + '\n\nReplace the current accounts for these years?')) return;
+    for(const k of kinds) for(const y of Object.keys(found[k])) state[k][y] = found[k][y].map(banglaRow);
+    persist();
+    banner = {msg: 'Imported from ' + esc(f.name) + ':<br>' + lines.map(esc).join('<br>')};
+    if(importTarget === null && !['bank','fdr'].includes(curTab)) curTab = kinds[0];
+    renderTabs(); renderPane();
+  }catch(err){ banner = {err:true, msg: 'Could not import the file. ' + err.message}; renderPane(); }
+}
+
+/* ---------- Word import (basics) ---------- */
+let review = null;
+const RV = [['name','করদাতার নাম'],['title','সম্বোধন (ভূমিকায়)'],['tin','টি আই এন'],['female','লিঙ্গ'],['jurisdiction','অধিক্ষেত্র'],
+  ['address','ঠিকানা'],['period','তদন্ত সংশ্লিষ্ট করবর্ষ'],['signatory','স্বাক্ষরকারী'],['header','অফিসের শিরোনাম']];
+const sigHead = s => String(s||'').split('\n').slice(0,2).join('\n');
+function currentOf(k){ const m = state.meta;
+  if(k==='female') return m.female ? 'মহিলা' : 'পুরুষ';
+  if(k==='signatory') return sigHead(m.signature);
+  if(k==='title') { const x = String(m.intro||'').match(/(জনাবা|জনাব|মিজ|মিসেস|বেগম)\s*\{name\}/); return x ? x[1] : ''; }
+  return m[k] || ''; }
+function buildReviewFields(){
+  const ex = review.ex, p = ex.persons[review.pi], s = ex.signers[review.si];
+  const f = basicsFor(ex, p, s), prev = review.fields || {};
+  review.fields = {};
+  for(const [k] of RV){
+    let v = k==='title' ? p && p.title : k==='signatory' ? (s ? `(${s.name})\n${s.designation}` : undefined) : f[k];
+    if(v === undefined || v === null || v === '') continue;
+    review.fields[k] = { v, on: prev[k] ? prev[k].on : k !== 'period' };
+  }
+}
+function renderReview(){
+  const ex = review.ex; let h = `<div class="review" id="reviewBox"><h3>Found in ${esc(review.files.join(', '))}</h3><p class="hint" style="margin:0">Tick what to use and correct anything before applying. The years under investigation are unticked because the calculation always covers 2019-20 to 2025-26.</p>`;
+  if(ex.persons.length > 1) h += `<div class="pick"><b>Which taxpayer is this report about?</b>` + ex.persons.map((p,i)=>`<label><input type="radio" name="rvP" data-rvp="${i}"${i===review.pi?' checked':''}> ${esc(p.name)} — TIN ${esc(p.tin)}${p.nameEn?' ('+esc(p.nameEn)+')':''}</label>`).join('') + `</div>`;
+  if(ex.signers.length > 1) h += `<div class="pick"><b>Who signs the report?</b>` + ex.signers.map((s,i)=>`<label><input type="radio" name="rvS" data-rvs="${i}"${i===review.si?' checked':''}> ${esc(s.name)}, ${esc(s.designation)}</label>`).join('') + `</div>`;
+  h += `<table><thead><tr><th></th><th>Field</th><th>Now</th><th>From the documents</th></tr></thead><tbody>`;
+  for(const [k,l] of RV){ const f = review.fields[k]; if(!f) continue;
+    const ctl = k==='female' ? `<select class="in" data-rvv="${k}"><option value="0"${!f.v?' selected':''}>পুরুষ — Male</option><option value="1"${f.v?' selected':''}>মহিলা — Female</option></select>`
+      : (k==='header'||k==='signatory'||k==='address') ? `<textarea class="in" data-rvv="${k}" rows="${k==='header'?4:2}">${esc(f.v)}</textarea>` : `<input class="in" data-rvv="${k}" value="${esc(f.v)}">`;
+    h += `<tr><td><input type="checkbox" data-rvc="${k}"${f.on?' checked':''} aria-label="Use ${l}"></td><td>${l}</td><td class="cur">${esc(currentOf(k))||'—'}</td><td>${ctl}</td></tr>`; }
+  return h + `</tbody></table><div class="acts"><button class="btn go" id="rvApply">Apply selected</button><button class="btn dark" id="rvCancel">Cancel</button></div></div>`;
+}
+function applyReview(){
+  const m = state.meta, F = review.fields, on = k => F[k] && F[k].on, applied = [];
+  for(const k of ['name','tin','jurisdiction','address','period','header']) if(on(k)){ m[k] = F[k].v; applied.push(k); }
+  if(on('female')){ m.female = !!F.female.v; applied.push('female'); }
+  if(on('title')){ m.intro = String(m.intro||'').replace(/(জনাবা|জনাব|মিজ|মিসেস|বেগম)?\s*\{name\}/, F.title.v+' {name}'); applied.push('title'); }
+  if(on('signatory')){ const rest = String(m.signature||'').split('\n').slice(2); m.signature = [F.signatory.v.trim(), ...rest].join('\n'); applied.push('signatory'); }
+  const names = applied.map(k => RV.find(r=>r[0]===k)[1]);
+  review = null; persist();
+  banner = {msg: names.length ? 'Updated: ' + names.join(', ') + '.' : 'Nothing was ticked, so nothing changed.'};
+  renderPane();
+}
+async function importDocx(files){
+  try{
+    const docs = [];
+    for(const f of files) docs.push(await readDocx(await f.arrayBuffer()).catch(e=>{ throw new Error(`“${esc(f.name)}”: ${e.message}`); }));
+    const ex = extractBasics(docs);
+    if(!ex.persons.length && !ex.signers.length && !ex.header) throw new Error('No taxpayer details were found. The page looks for text like “জনাব …, টিআইএনঃ …, সার্কেল-…, কর অঞ্চল-…”.');
+    review = {ex, pi: 0, si: 0, files: files.map(f=>f.name)}; buildReviewFields();
+  }catch(err){ banner = {err:true, msg:'Could not read the Word file. ' + err.message}; }
+  curTab = 'general'; renderTabs(); renderPane();
+  const rb = document.getElementById('reviewBox'); if(rb) rb.scrollIntoView({block:'start'});
+}
+document.getElementById('bImport').onclick = ()=>{ importTarget = null; document.getElementById('anyIn').click(); };
+document.getElementById('anyIn').onchange = async e=>{
+  const fs = [...e.target.files]; e.target.value = '';
+  const docs = [], xls = [];
+  for(const f of fs){ let isDoc = /\.docx$/i.test(f.name);
+    try{ const get = await unzipXlsx(await f.arrayBuffer()); isDoc = !!(await get('word/document.xml')); }catch(e){}
+    (isDoc ? docs : xls).push(f); }
+  for(const x of xls) await importXlsx(x);
+  if(docs.length) await importDocx(docs);
+};
+document.getElementById('docIn').onchange = e=>{ const fs = [...e.target.files]; e.target.value = ''; if(fs.length) importDocx(fs); };
+document.addEventListener('click', e=>{
+  const id = e.target.id;
+  if(id==='impDoc') document.getElementById('docIn').click();
+  else if(id==='rvApply') applyReview();
+  else if(id==='rvCancel'){ review = null; renderPane(); }
+});
+document.addEventListener('change', e=>{
+  const t = e.target; if(!review) return;
+  if(t.dataset.rvp !== undefined){ review.pi = +t.dataset.rvp; buildReviewFields(); renderPane(); }
+  else if(t.dataset.rvs !== undefined){ review.si = +t.dataset.rvs; buildReviewFields(); renderPane(); }
+  else if(t.dataset.rvc) review.fields[t.dataset.rvc].on = t.checked;
+  else if(t.dataset.rvv==='female') review.fields.female.v = t.value==='1';
+});
+document.addEventListener('input', e=>{ const k = e.target.dataset && e.target.dataset.rvv; if(review && k && k!=='female') review.fields[k].v = e.target.value; });
+
+document.getElementById('bWord').onclick = ()=>{
+  updateLive();
+  const v = document.getElementById('viewer'), hidden = !v.offsetWidth, w = document.getElementById('paperWrap');
+  if(hidden){ v.style.cssText = 'display:block;position:absolute;left:-10000px;top:0;width:900px;opacity:0;pointer-events:none'; }
+  const tr = w.style.transform; w.style.transform = 'none';
+  try{
+    const blob = reportToDocx(document.getElementById('report'), state.meta.font==='sans' ? 'Nikosh' : 'Noto Serif Bengali');
+    deliver(blob, reportFileName() + '.docx');
+  } finally { w.style.transform = tr; if(hidden) v.style.cssText = ''; fitPaper(); }
+};
+window.addEventListener('resize', fitPaper);
+window.addEventListener('beforeprint', ()=>{ const w=document.getElementById('paperWrap'); w.style.transform='none'; w.style.height='auto'; w.style.width='auto'; });
+window.addEventListener('afterprint', fitPaper);
+if(document.fonts) document.fonts.ready.then(fitPaper);
+
+renderTabs(); renderPane();
+</script>
+</body>
+</html>

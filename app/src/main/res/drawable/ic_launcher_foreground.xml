@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A report sheet with a magnifying glass, inside the 66dp safe zone of a 108dp adaptive icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF" android:pathData="M36,28h28l8,8v42a2,2 0 0 1 -2,2h-34a2,2 0 0 1 -2,-2v-48a2,2 0 0 1 2,-2z" />
+    <path android:fillColor="#C9D8D2" android:pathData="M64,28l8,8h-8z" />
+    <path android:fillColor="#8FA69E" android:pathData="M40,42h24v3h-24zM40,50h28v3h-28zM40,58h18v3h-18zM40,66h14v3h-14z" />
+    <path android:fillColor="#00000000" android:strokeColor="#F2B233" android:strokeWidth="4" android:pathData="M68,66m-8,0a8,8 0 1 1 16,0a8,8 0 1 1 -16,0" />
+    <path android:fillColor="#00000000" android:strokeColor="#F2B233" android:strokeWidth="5" android:strokeLineCap="round" android:pathData="M74,72l7,7" />
+</vector>
