@@ -284,7 +284,7 @@ function computeAll(d) {
     r.undiscInv = Math.max(0, r.foundInv - r.shownInv);
     // 4 deposits
     r.dps = g('dpsDeposit');
-    r.totalDep = r.bankDep + r.fdrDep + r.dps;
+    r.totalDep = r.bankDep + r.fdrDep;
     // 5 computation
     r.declaredIncome = g('declaredIncome');
     r.totalTaxable = r.declaredIncome + r.undiscIncome;
@@ -1085,7 +1085,7 @@ function renderReport(){
     ['এফডিআর এর স্থিতি',r=>r.fdrBal],['অন্যান্য হিসাবের স্থিতি ও নগদ অর্থ',r=>r.bankBal],
     ['প্রাপ্ত মোট বিনিয়োগ',r=>r.foundInv,'tot'],['প্রদর্শিত স্থিতি',r=>r.shownInv],['মোট অপ্রদর্শিত বিনিয়োগ',r=>r.undiscInv,'tot']]);
   h += `<h3>৪। ব্যাংক জমা বিশ্লেষণঃ</h3>` + yearTable('হিসাবের ধরণ/করবর্ষ',[
-    ['এফডিআর ব্যতীত অন্যান্য হিসাব',r=>r.bankDep],['এফডিআর হিসাব',r=>r.fdrDep],['ডিপিএস হিসাব',r=>r.dps],['মোট জমা',r=>r.totalDep,'tot']]);
+    ['এফডিআর ব্যতীত অন্যান্য হিসাব',r=>r.bankDep],['এফডিআর হিসাব',r=>r.fdrDep],['মোট জমা',r=>r.totalDep,'tot']]);
   h += `<h3>৫। সম্ভাব্য কর পরিগণনাঃ</h3>` + vis.map(calcBlock).join('');
   h += `<h3>৬। পর্যবেক্ষণসমূহঃ</h3><p>${esc(bn(m.observations||''))||'&nbsp;'}</p>`;
   h += `<h3>৭। বিভিন্ন করবর্ষে সম্ভাব্য কর ফাঁকি ও জরিমানার পরিমাণঃ</h3><table><thead><tr><th>করবর্ষ</th><th>সম্ভাব্য নিরূপিত আয়</th><th>সম্ভাব্য ফাঁকিকৃত কর</th><th>সম্ভাব্য জরিমানা</th><th>সম্ভাব্য মোট করদায়</th></tr></thead><tbody>`;
