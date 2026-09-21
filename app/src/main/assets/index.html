@@ -91,7 +91,7 @@ details.notes li{margin-bottom:5px}
 /* preview */
 .viewer{overflow:auto;padding:24px;display:flex;justify-content:center}
 .paperWrap{transform-origin:top left}
-.paper{width:210mm;min-height:297mm;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.08),0 8px 28px rgba(14,77,60,.12);padding:16mm 15mm}
+.paper{width:210mm;min-height:297mm;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.08),0 8px 28px rgba(14,77,60,.12);padding:1in}
 
 /* ===== report typography ===== */
 .rep{font-family:var(--rep);font-size:10.5pt;line-height:1.55;color:#000}
@@ -134,7 +134,7 @@ details.notes li{margin-bottom:5px}
   .btn{padding:4px 9px;font-size:13.5px}
 }
 @media print{
-  @page{size:A4;margin:14mm 13mm}
+  @page{size:A4;margin:1in}
   body{background:#fff}
   .top,.side,.tabs{display:none!important}
   .layout{display:block}
@@ -172,16 +172,17 @@ details.notes li{margin-bottom:5px}
    One model for the whole report (replaces the parallel Tax Calculation / Report chains). */
 // Income heads (ITA 2023): [found key, shown-in-return key, label]
 const INCOME_HEADS = [
-  ['empIncome','shownEmp','(ক) চাকরি হইতে আয়'],
-  ['rentIncome','shownRent','(খ) ভাড়া হইতে আয়'],
-  ['agriIncome','shownAgri','(গ) কৃষি হইতে আয়'],
-  ['bizIncome','shownBiz','(ঘ) ব্যবসা হইতে আয়'],
-  ['capGains','shownCapGains','(ঙ) মূলধনি আয়'],
-  ['finIncome','shownFin','(চ) সঞ্চয়পত্রের সুদ আয় (চূড়ান্ত করদায়)'],
-  ['otherIncome','shownOther','(ছ) অন্যান্য উৎস হইতে আয়'],
+  ['empIncome','shownEmp','চাকরি হইতে আয়'],
+  ['rentIncome','shownRent','ভাড়া হইতে আয়'],
+  ['agriIncome','shownAgri','কৃষি হইতে আয়'],
+  ['bizIncome','shownBiz','ব্যবসা হইতে আয়'],
+  ['capGains','shownCapGains','মূলধনি আয়'],
+  ['finIncome','shownFin','সঞ্চয়পত্রের সুদ আয় (চূড়ান্ত করদায়)'],
+  ['otherIncome','shownOther','অন্যান্য উৎস হইতে আয়'],
 ];
 // Older saved data used different keys; bring it up to date.
 function migrate(d){
+  d.collect ||= [];                     // tax payments (e-challans) made against the evaded tax and penalty
   for(const Y of d.years || []){
     if('salary' in Y){ Y.empIncome = Y.empIncome || Y.salary; delete Y.salary; }
     if('shownSalary' in Y){ Y.shownEmp = Y.shownEmp || Y.shownSalary; delete Y.shownSalary; }
@@ -283,8 +284,7 @@ function computeAll(d) {
     r.shownInv = g('shownFDR') + g('shownBank');
     r.undiscInv = Math.max(0, r.foundInv - r.shownInv);
     // 4 deposits
-    r.dps = g('dpsDeposit');
-    r.totalDep = r.bankDep + r.fdrDep;
+    r.totalDep = r.bankDep + r.fdrDep ;
     // 5 computation
     r.declaredIncome = g('declaredIncome');
     r.totalTaxable = r.declaredIncome + r.undiscIncome;
@@ -300,7 +300,8 @@ function computeAll(d) {
     r.finalIncome = g('finalIncome');
     r.regular = Math.max(0, r.assessed - r.finalIncome);
     r.slabBase = female ? Math.max(0, r.regular - 50000) : r.regular;
-    r.tax = slabTax(y, r.slabBase) + g('finalTax');
+    r.regTax = slabTax(y, r.slabBase); r.finalTaxAmt = g('finalTax');
+    r.tax = r.regTax + r.finalTaxAmt;
     r.rebate = Math.min(r.tax, rebate(y, g('rebateInv'), r.regular));
     r.afterRebate = r.tax - r.rebate;
     r.surRate = surchargeRate(y, r.rebuilt);
@@ -379,7 +380,7 @@ async function readWorkbook(buf){
   return sheets;
 }
 
-/* Turn a sheet laid out like "Bank Details (Non-FD)" / "FDR Details" / "Sanchaypatra" into accounts per tax year. */
+/* Turn a sheet laid out like "Bank" / "FDR" / "Sanchaypatra" into accounts per tax year. */
 const HDR = [ // order matters: "মোট জমা (ক্রেডিটকৃত সুদ ব্যতীত)" must become deposit, not interest
   ['bank',    /ব্যাংক|bank|institution/i],
   ['acct',    /হিসাব\s*(নং|নম্বর)|account\s*(no|number)|a\/c/i],
@@ -519,6 +520,22 @@ const TL_DICT = {
   pirojpur:'পিরোজপুর', jhalokati:'ঝালকাঠি', barguna:'বরগুনা', rangamati:'রাঙ্গামাটি', bandarban:'বান্দরবান', khagrachari:'খাগড়াছড়ি',
   paradise:'প্যারাডাইস', para:'পাড়া', panthapath_:'', eskaton:'ইস্কাটন', bijoy:'বিজয়', sarani:'সরণি', kazi:'কাজী', nazrul:'নজরুল', islam:'ইসলাম',
   shahid:'শহীদ', shaheed:'শহীদ', suhrawardy:'সোহরাওয়ার্দী', sheikh:'শেখ', mujib:'মুজিব', bir:'বীর', uttam:'উত্তম', road_:'',
+
+    // --- from the office bank list (0_Bank_List.docx) and earlier corrections ---
+  united:'ইউনাইটেড', american:'আমেরিকান', express:'এক্সপ্রেস', street:'স্ট্রিট',
+  agriculture:'এগ্রিকালচার', agricultural:'এগ্রিকালচারাল', samabay:'সমবায়', palli:'পল্লী', sanchay:'সঞ্চয়',
+  upper:'আপার', lower:'লোয়ার', middle:'মিডল', service:'সার্ভিস', services:'সার্ভিসেস',
+  solution:'সলিউশন', solutions:'সলিউশনস', enterprise:'এন্টারপ্রাইজ', enterprises:'এন্টারপ্রাইজেস',
+  traders:'ট্রেডার্স', trading:'ট্রেডিং', textile:'টেক্সটাইল', textiles:'টেক্সটাইলস', garments:'গার্মেন্টস',
+  group:'গ্রুপ', industries:'ইন্ডাস্ট্রিজ', foundation:'ফাউন্ডেশন', association:'অ্যাসোসিয়েশন',
+  fund:'ফান্ড', welfare:'ওয়েলফেয়ার', government:'গভর্নমেন্ট', govt:'গভঃ', ministry:'মিনিস্ট্রি',
+  department:'ডিপার্টমেন্ট', madrasa:'মাদ্রাসা', nazimuddin:'নাজিমুদ্দিন', hatirjheel:'হাতিরঝিল',
+  tejturi:'তেজতুরী', banglamotor:'বাংলামোটর',
+  the:'দি', of:'অব', and:'এন্ড', commercial:'কমার্সিয়াল', southeast:'সাউথ ইস্ট', pakistan:'পাকিস্তান', india:'ইন্ডিয়া',
+  shimanto:'সীমান্ত', madhumati:'মধুমতি', bay:'বে', far:'ফার', fareast:'ফারইস্ট', fidelity:'ফিডেলিটি', assets:'অ্যাসেটস',
+  asset:'অ্যাসেট', lease:'লিজ', infrastructure:'ইনফ্রাস্ট্রাকচার', promotion:'প্রমোশন', lanka:'লঙ্কা', lankabangla:'লঙ্কাবাংলা',
+  midas:'মাইডাস', financing:'ফাইন্যান্সিং', phoenix:'ফিনিক্স', reliance:'রিলায়েন্স', meridian:'মেরিডিয়ান',
+  peoples:'পিপলস', people:'পিপলস', na:'এনএ', citibank:'সিটি ব্যাংক', development:'ডেভেলপমেন্ট', credit:'ক্রেডিট', health:'হেলথ', care:'কেয়ার', amar:'আমার', Bhobishawt:'ভবিষ্যৎ',  
 };
 const TL_LETTER = {a:'এ',b:'বি',c:'সি',d:'ডি',e:'ই',f:'এফ',g:'জি',h:'এইচ',i:'আই',j:'জে',k:'কে',l:'এল',m:'এম',n:'এন',o:'ও',p:'পি',q:'কিউ',r:'আর',s:'এস',t:'টি',u:'ইউ',v:'ভি',w:'ডব্লিউ',x:'এক্স',y:'ওয়াই',z:'জেড'};
 // Consonant sounds (longest first) and vowel sounds: [independent form, dependent sign]
@@ -779,7 +796,7 @@ function zipStore(files){   // files: [[name, string]] → Blob (stored, no comp
 const xe = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function reportToDocx(root, fontName){
-  const TW = 11906 - 2*737;                           // A4 width minus 13 mm margins, in twips
+  const TW = 11906 - 2*1440;                          // A4 width minus 1-inch margins, in twips
   const run = (text, o={}) => {
     const rp = `<w:rPr>${o.b?'<w:b/><w:bCs/>':''}${o.i?'<w:i/><w:iCs/>':''}${o.sz?`<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>`:''}${o.u?'<w:u w:val="single"/>':''}</w:rPr>`;
     return String(text).split('\n').map((ln,i)=>`<w:r>${rp}${i?'<w:br/>':''}<w:t xml:space="preserve">${xe(ln)}</w:t></w:r>`).join('');
@@ -794,18 +811,24 @@ function reportToDocx(root, fontName){
     let w = [...ref.cells].map(c => c.getBoundingClientRect().width); const tot = w.reduce((a,b)=>a+b,0) || 1;
     w = w.map(x => Math.round(x/tot*TW));
     let x = `<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:tblBorders>${['top','left','bottom','right','insideH','insideV'].map(s=>`<w:${s} w:val="single" w:sz="4" w:space="0" w:color="333333"/>`).join('')}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="60" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${w.map(v=>`<w:gridCol w:w="${v}"/>`).join('')}</w:tblGrid>`;
+    const vm = new Array(ncol).fill(0), vspan = new Array(ncol).fill(1);   // cells still covered by a row-span from above
     rows.forEach((r, ri) => {
       const head = r.parentElement.tagName === 'THEAD', trc = r.className;
       x += `<w:tr><w:trPr><w:cantSplit/>${head?'<w:tblHeader/>':''}</w:trPr>`;
-      let col = 0;
-      for(const c of r.cells){
-        const span = c.colSpan || 1, cw = w.slice(col, col+span).reduce((a,b)=>a+b,0); col += span;
+      let col = 0; const cells = [...r.cells]; let ci = 0;
+      while(col < ncol && (ci < cells.length || vm[col] > 0)){
+        if(vm[col] > 0){ const sp = vspan[col], cwv = w.slice(col, col+sp).reduce((a,b)=>a+b,0); vm[col]--;
+          x += `<w:tc><w:tcPr><w:tcW w:w="${cwv}" w:type="dxa"/>${sp>1?`<w:gridSpan w:val="${sp}"/>`:''}<w:vMerge/></w:tcPr><w:p/></w:tc>`; col += sp; continue; }
+        const c = cells[ci++], rs = c.rowSpan || 1;
+        const span = c.colSpan || 1, cw = w.slice(col, col+span).reduce((a,b)=>a+b,0);
+        if(rs > 1){ vm[col] = rs - 1; vspan[col] = span; }
+        col += span;
         const th = c.tagName === 'TH', cls = c.className;
         const bold = th || /tot|key|sub/.test(trc);
         const fill = th ? 'EEF0EF' : /tot|sub/.test(trc) ? 'F5F6F5' : null;
         const jc = /\br\b/.test(cls) ? 'right' : (/\bc\b/.test(cls) || (th && c.style.textAlign !== 'left')) ? 'center' : 'left';
         const keep = keepTogether && ri < rows.length - 1;
-        x += `<w:tc><w:tcPr><w:tcW w:w="${cw}" w:type="dxa"/>${span>1?`<w:gridSpan w:val="${span}"/>`:''}${fill?`<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>`:''}</w:tcPr>`
+        x += `<w:tc><w:tcPr><w:tcW w:w="${cw}" w:type="dxa"/>${span>1?`<w:gridSpan w:val="${span}"/>`:''}${rs>1?'<w:vMerge w:val="restart"/>':''}${fill?`<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>`:''}${rs>1?'<w:vAlign w:val="center"/>':''}</w:tcPr>`
           + para(textOf(c), {b:bold, jc, sz:18, after:0, keep, ind: /\bind\b/.test(cls) ? 280 : 0}) + `</w:tc>`;
       }
       x += `</w:tr>`;
@@ -833,7 +856,7 @@ function reportToDocx(root, fontName){
     else if(t === 'P') body += textOf(el).split('\n').map(line => para(line, {jc:'both', after:100})).join('');
   }
   const F = xe(fontName);
-  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="794" w:right="737" w:bottom="794" w:left="737" w:header="397" w:footer="397" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${F}" w:hAnsi="${F}" w:eastAsia="${F}" w:cs="${F}"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="en-US" w:bidi="bn-BD"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="60" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`;
   return zipStore([
     ['[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`],
@@ -845,7 +868,7 @@ function reportToDocx(root, fontName){
 
 </script>
 <script>
-const DEFAULTS = {"meta": {"header": "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার\nআয়কর গোয়েন্দা ও তদন্ত ইউনিট\nরাজস্ব ভবন (লেভেল-১০)\nআগারগাঁও, শের-ই-বাংলা নগর, ঢাকা-১২০৭", "title": "কর ফাঁকির তদন্ত প্রতিবেদন", "intro": "করদাতা জনাব {name} , টিআইএন-{tin}, {jurisdiction} এর একজন করদাতা। গোপনসূত্রে প্রাপ্ত করফাঁকির অভিযোগের প্রেক্ষিতে আয়কর গোয়েন্দা ও তদন্ত ইউনিট কর্তৃক করদাতার আয়কর ফাকিঁর তদন্তের সিদ্ধান্ত হয় এবং নিম্নস্বাক্ষরকারীকে তদন্তের দায়িত্ব প্রদান করা হয়। এ প্রেক্ষিতে করদাতার আয়কর নথি তলব করা হয় এবং নথিস্থ আয়কর রিটার্ন ও অন্যান্য রেকর্ডসমূহ পর্যালোচনা করা হয়। প্রাথমিক তদন্তে করফাঁকির অভিযোগের সত্যতা পাওয়ায় করদাতার আয়, ব্যয় ও বিনিয়োগ সংক্রান্ত তথ্য সংগ্রহের জন্য আয়কর আইন, ২০২৩ এর ২০০ ধারায় কার্যক্রম গ্রহণ করা হয় এবং ব্যাংক, আর্থিক প্রতিষ্ঠানসহ অন্যান্য প্রতিষ্ঠান থেকে তথ্য সংগ্রহ করা হয়। অনুসন্ধান ও তদন্তে প্রাপ্ত/সংগৃহিত তথ্য-প্রমাণাদি করদাতার ব্যাখ্যা এবং আয়কর রিটার্ন ও নথির রেকর্ড পর্যালোচনা করে উল্লিখিত করদাতার করফাকিঁর তদন্ত প্রতিবেদন নিম্নে  উপস্থাপন করা হলোঃ", "note": "* উল্লেখ্য এটি একটি সম্ভাব্য হিসাব মাত্র। কর নির্ধারণকালে/করদাতা কর্তৃক সংশোধিত রিটার্ন দাখিল/প্রমাণাদি দাখিল সাপেক্ষে করদায় কম বা বেশি হতে পারে।", "recommendations": "তদন্ত প্রতিবেদনের আলোকে নিম্নলিখিত সুপারিশসমূহ যথাযথভাবে কার্যকর করার নিমিত্ত সার্কেল কর্মকর্তা ও রেঞ্জ কর্মকর্তাকে প্রয়োজনীয় নির্দেশনা প্রদানের জন্য কর কমিশনার মহোদয়কে অনুরোধ করা হলোঃ\nক) তদন্ত প্রতিবেদন ও সন্নিবেশিত তথ্যের আলোকে প্রযোজ্য করবর্ষের কর মামলা ২১২ ধারায় পুনঃউন্মোচনের আইনানুগ ব্যবস্থা গ্রহণ;\nখ) কর নির্ধারণকালে আইন অনুযায়ী সংশ্লিষ্ট করবর্ষের সম্পদ পুনর্গঠন, করদায়, জরিমানা, সারচার্জ/ পরিবেশ সারচার্জ ও সরল সুদ আরোপ এবং বিধি মোতাবেক বিনিয়োগজনিত রেয়াত ও প্রমাণাদি সাপেক্ষে পরিশোধিত করের ক্রেডিট প্রদান;\nগ) কর নির্ধারণ পর্যায়ে ব্যাংক জমা পুঙ্খানুপুঙ্খভাবে পরীক্ষা/যাচাই করণ এবং এ বিষয়ে করদাতাকে ব্যাখ্যার সুযোগ প্রদান পূর্বক আইনানুগ ব্যবস্থা গ্রহণ;\nঘ) আয়কর আইন ২০২৩ এর ২১২ ধারায় পুনঃউন্মোচনপূর্বক কার্যক্রম গ্রহণকালে উদঘাটিত অন্যান্য কর ফাঁকির বিষয় থাকলে তা যথাযথভাবে করারোপন প্রক্রিয়ায় অন্তর্ভূক্তকরণ; ও\nঙ) করমামলাসমূহ দ্রুত নিষ্পত্তিপূর্বক কমিশনার আয়কর গোয়েন্দা ও তদন্ত ইউনিট বরাবর একটি পরিপালন প্রতিবেদন প্রেরণ।", "signature": "(পারিশা আহমেদ প্রধী)\nসহকারী কর কমিশনার \nআয়কর গোয়েন্দা ও তদন্ত ইউনিট\nজাতীয় রাজস্ব বোর্ড", "name": "", "tin": "", "taxpayerType": "ব্যক্তি", "address": "", "jurisdiction": "", "period": "", "observations": "", "female": false, "prevNW": "", "bengaliDigits": true, "font": "serif"}, "years": [{"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "70", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "60", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "50", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "40", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "30", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "20", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "dpsDeposit": "", "penaltyRate": "10", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}], "bank": [[], [], [], [], [], [], []], "fdr": [[], [], [], [], [], [], []]};
+const DEFAULTS = {"meta": {"header": "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার\nআয়কর গোয়েন্দা ও তদন্ত ইউনিট\nরাজস্ব ভবন (লেভেল-১০)\nআগারগাঁও, শের-ই-বাংলা নগর, ঢাকা-১২০৭", "title": "কর ফাঁকির তদন্ত প্রতিবেদন", "intro": "করদাতা জনাব {name} , টিআইএন-{tin}, {jurisdiction} এর একজন করদাতা। গোপনসূত্রে প্রাপ্ত করফাঁকির অভিযোগের প্রেক্ষিতে আয়কর গোয়েন্দা ও তদন্ত ইউনিট কর্তৃক করদাতার আয়কর ফাকিঁর তদন্তের সিদ্ধান্ত হয় এবং নিম্নস্বাক্ষরকারীকে তদন্তের দায়িত্ব প্রদান করা হয়। এ প্রেক্ষিতে করদাতার আয়কর নথি তলব করা হয় এবং নথিস্থ আয়কর রিটার্ন ও অন্যান্য রেকর্ডসমূহ পর্যালোচনা করা হয়। প্রাথমিক তদন্তে করফাঁকির অভিযোগের সত্যতা পাওয়ায় করদাতার আয়, ব্যয় ও বিনিয়োগ সংক্রান্ত তথ্য সংগ্রহের জন্য আয়কর আইন, ২০২৩ এর ২০০ ধারায় কার্যক্রম গ্রহণ করা হয় এবং ব্যাংক, আর্থিক প্রতিষ্ঠানসহ অন্যান্য প্রতিষ্ঠান থেকে তথ্য সংগ্রহ করা হয়। অনুসন্ধান ও তদন্তে প্রাপ্ত/সংগৃহিত তথ্য-প্রমাণাদি করদাতার ব্যাখ্যা এবং আয়কর রিটার্ন ও নথির রেকর্ড পর্যালোচনা করে উল্লিখিত করদাতার করফাকিঁর তদন্ত প্রতিবেদন নিম্নে  উপস্থাপন করা হলোঃ", "note": "* উল্লেখ্য এটি একটি সম্ভাব্য হিসাব মাত্র। কর নির্ধারণকালে/করদাতা কর্তৃক সংশোধিত রিটার্ন দাখিল/প্রমাণাদি দাখিল সাপেক্ষে করদায় কম বা বেশি হতে পারে।", "recommendations": "তদন্ত প্রতিবেদনের আলোকে নিম্নলিখিত সুপারিশসমূহ যথাযথভাবে কার্যকর করার নিমিত্ত সার্কেল কর্মকর্তা ও রেঞ্জ কর্মকর্তাকে প্রয়োজনীয় নির্দেশনা প্রদানের জন্য কর কমিশনার মহোদয়কে অনুরোধ করা হলোঃ\nক) তদন্ত প্রতিবেদন ও সন্নিবেশিত তথ্যের আলোকে প্রযোজ্য করবর্ষের কর মামলা ২১২ ধারায় পুনঃউন্মোচনের আইনানুগ ব্যবস্থা গ্রহণ;\nখ) কর নির্ধারণকালে আইন অনুযায়ী সংশ্লিষ্ট করবর্ষের সম্পদ পুনর্গঠন, করদায়, জরিমানা, সারচার্জ/ পরিবেশ সারচার্জ ও সরল সুদ আরোপ এবং বিধি মোতাবেক বিনিয়োগজনিত রেয়াত ও প্রমাণাদি সাপেক্ষে পরিশোধিত করের ক্রেডিট প্রদান;\nগ) কর নির্ধারণ পর্যায়ে ব্যাংক জমা পুঙ্খানুপুঙ্খভাবে পরীক্ষা/যাচাই করণ এবং এ বিষয়ে করদাতাকে ব্যাখ্যার সুযোগ প্রদান পূর্বক আইনানুগ ব্যবস্থা গ্রহণ;\nঘ) আয়কর আইন ২০২৩ এর ২১২ ধারায় পুনঃউন্মোচনপূর্বক কার্যক্রম গ্রহণকালে উদঘাটিত অন্যান্য কর ফাঁকির বিষয় থাকলে তা যথাযথভাবে করারোপন প্রক্রিয়ায় অন্তর্ভূক্তকরণ; ও\nঙ) করমামলাসমূহ দ্রুত নিষ্পত্তিপূর্বক কমিশনার আয়কর গোয়েন্দা ও তদন্ত ইউনিট বরাবর একটি পরিপালন প্রতিবেদন প্রেরণ।", "signature": "(পারিশা আহমেদ প্রধী)\nসহকারী কর কমিশনার \nআয়কর গোয়েন্দা ও তদন্ত ইউনিট\nজাতীয় রাজস্ব বোর্ড", "name": "", "tin": "", "taxpayerType": "ব্যক্তি", "address": "", "jurisdiction": "", "period": "", "observations": "", "female": false, "prevNW": "", "bengaliDigits": true, "font": "serif"}, "years": [{"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "penaltyRate": "70", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "penaltyRate": "60", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "penaltyRate": "50", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "penaltyRate": "40", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "penaltyRate": "30", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "penaltyRate": "20", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}, {"declaredNW": "", "declaredExp": "", "declaredIncome": "", "finalIncome": "", "finalTax": "", "rebateInv": "", "taxPaid": "", "shownFDR": "", "shownBank": "", "shownInterest": "", "shownTDS": "", "shownCapGains": "", "capGains": "", "priorTax": "", "familyExp": "", "envSurcharge": "", "penaltyRate": "10", "assessSection": "", "empIncome": "", "shownEmp": "", "rentIncome": "", "agriIncome": "", "bizIncome": "", "finIncome": "", "otherIncome": "", "shownRent": "", "shownAgri": "", "shownBiz": "", "shownFin": "", "shownOther": "", "exemptOther": ""}], "bank": [[], [], [], [], [], [], []], "fdr": [[], [], [], [], [], [], []]};
 const STORE = 'taxReport.v1';
 let state, curYear = 0, curTab = 'general', banner = null, importTarget = null;
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -881,19 +904,18 @@ const YF = [
   ['rebateInv','রেয়াতযোগ্য প্রকৃত বিনিয়োগ','Investment eligible for rebate'],
   ['taxPaid','পরিশোধিত কর (নথি অনুসারে)','Tax paid as per file'] ]],
  ['রিটার্নে প্রদর্শিত আয়', 'Income shown in the return, by head', [
-  ['shownInterest','সুদ আয়','Interest income'],
+  ['shownInterest','আর্থিক পরিসম্পদ হতে আয় (চূড়ান্ত করদায় ব্যতীত)','Interest income'],
   ...INCOME_HEADS.map(([,s,l]) => [s, l, '']) ]],
  ['রিটার্নে (আইটি-১০বি) প্রদর্শিত স্থিতি ও কর', 'Balances and TDS shown in the return', [
   ['shownFDR','প্রদর্শিত এফডিআর স্থিতি','FDR balance shown'],
   ['shownBank','প্রদর্শিত অন্যান্য ব্যাংক স্থিতি','Other bank balance shown'],
-  ['shownTDS','প্রদর্শিত উৎসে কর্তিত কর','TDS shown'] ]],
+  ['shownTDS','প্রদর্শিত উৎসে কর্তিত কর (শুধু মাত্র ব্যাংক হিসাবসমূহ হতে)','TDS shown'] ]],
  ['তদন্তে প্রাপ্ত আয়', 'Income found in the investigation — copied from the amounts shown in the return; change any that differ. Interest comes from the bank tables.', 
   INCOME_HEADS.map(([k,,l]) => [k, l, '']) ],
  ['তদন্তে প্রাপ্ত অন্যান্য তথ্য', 'Other findings', [
-  ['priorTax','পূর্বের রিটার্নের সাথে/অন্যান্য পরিশোধিত আয়কর','Other income tax paid'],
-  ['familyExp','পারিবারিক খরচ (আয়কর ব্যতীত)','Family expenses found'],
-  ['dpsDeposit','ডিপিএস হিসাবে জমা','DPS deposits'] ]],
- ['কর ও জরিমানা', 'Tax and penalty', [
+  ['priorTax','পূর্বের রিটার্নের সাথে/অন্যান্য পরিশোধিত আয়কর (ব্যাংক হিসাব ব্যতীত)','Other income tax paid'],
+  ['familyExp','পারিবারিক খরচ (আয়কর ব্যতীত)','Family expenses found'] ]],
+  ['কর ও জরিমানা', 'Tax and penalty', [
   ['envSurcharge','পরিবেশ সারচার্জ','Environmental surcharge'],
   ['penaltyRate','২৭২ ধারার জরিমানার হার (%)','Penalty rate, %'] ]],
 ];
@@ -915,7 +937,7 @@ function field(path, label, sub, kind){
 function yearChips(){ return `<div class="years" role="group" aria-label="Tax year">${YEARS.map((y,i)=>`<button class="chip" data-year="${i}" aria-pressed="${i===curYear}">${y}</button>`).join('')}</div>`; }
 
 /* ---------- panes ---------- */
-const TABS = [['general','সাধারণ তথ্য'],['year','বার্ষিক তথ্য'],['bank','ব্যাংক হিসাব'],['fdr','এফডিআর'],['preview','প্রিভিউ']];
+const TABS = [['general','সাধারণ তথ্য'],['year','বার্ষিক তথ্য'],['bank','ব্যাংক হিসাব'],['fdr','এফডিআর'],['collect','আদায়'],['preview','প্রিভিউ']];
 function renderTabs(){
   document.getElementById('tabs').innerHTML = TABS.map(([k,l])=>`<button class="tab${k==='preview'?' preview-only':''}" role="tab" data-tab="${k}" aria-selected="${k===curTab}">${l}</button>`).join('');
   document.body.classList.toggle('show-preview', curTab==='preview');
@@ -938,7 +960,7 @@ function renderPane(){
       field(m+'header','শিরোনাম (অফিস)','Office header','area')+field(m+'title','প্রতিবেদনের নাম','Title','text')+
       `<div class="f wide"><p class="hint" style="margin:0">In the introduction, {name}, {tin} and {jurisdiction} are filled in from the fields above.</p></div>`+
       field(m+'intro','ভূমিকা','Introduction','area')+field(m+'observations','৬। পর্যবেক্ষণসমূহ','Observations','area')+
-      field(m+'note','টীকা','Footnote under the summary','area')+field(m+'recommendations','৮। সুপারিশ','Recommendations','area')+
+      field(m+'note','টীকা','Footnote under the summary','area')+field(m+'recommendations','সুপারিশ','Recommendations','area')+
       field(m+'signature','স্বাক্ষরকারী','Signatory block','area')+
       `<div class="f"><label for="i_digits">সংখ্যা<span>Digits in the report</span></label><select class="in" id="i_digits" data-b="meta.bengaliDigits" data-bool="1"><option value="1"${state.meta.bengaliDigits?' selected':''}>বাংলা ১২৩</option><option value="0"${!state.meta.bengaliDigits?' selected':''}>English 123</option></select></div>`+
       `<div class="f"><label for="i_font">ফন্ট<span>Report font</span></label><select class="in" id="i_font" data-b="meta.font"><option value="serif"${state.meta.font!=='sans'?' selected':''}>Noto Serif Bengali</option><option value="sans"${state.meta.font==='sans'?' selected':''}>Nikosh / Noto Sans Bengali</option></select></div>`+
@@ -951,10 +973,29 @@ function renderPane(){
       for(const [k,l,s,kind] of fs) h += field(`years.${curYear}.${k}`, l, s, kind);
       h += `</div></fieldset>`;
     }
+  } else if(curTab==='collect'){
+    const pays = state.collect ||= [];
+    if(state.meta.collectIntro === undefined) state.meta.collectIntro = COLLECT_INTRO;
+    const yrs = typeof effYears === 'function' ? effYears(state) : YEARS;
+    h += `<p class="hint">ফাঁকিকৃত আয়কর ও জরিমানার বিপরীতে করদাতা যে এ-চালানের মাধ্যমে কর পরিশোধ করেছেন, সেগুলো এখানে দিন। প্রতিবেদনে “সুপারিশ” এর আগে আলাদা অনুচ্ছেদ হিসেবে আসবে, একই করবর্ষের চালানগুলো একসাথে দেখাবে। কোনো চালান না থাকলে অনুচ্ছেদটি প্রতিবেদনে থাকবে না।</p>`;
+    h += `<div class="grid" style="margin-bottom:12px">` + field('meta.collectIntro','অনুচ্ছেদের শুরুর লেখা','Opening sentence of the section','area') + `</div>`;
+    h += `<div class="rows"><table><thead><tr><th></th><th>করবর্ষ</th><th>ব্যাংকের নাম</th><th>এ-চালান নং</th><th>তারিখ</th><th>পরিমাণ</th><th></th></tr></thead><tbody>`;
+    if(!pays.length) h += `<tr><td colspan="7" class="empty">No payments yet. Add one below.</td></tr>`;
+    pays.forEach((p,i)=>{
+      const opts = [...new Set(['', ...yrs, p.year||''])].map(y=>`<option value="${esc(y)}"${y===(p.year||'')?' selected':''}>${y||'—'}</option>`).join('');
+      h += `<tr><td class="n">${i+1}</td><td><select class="in" data-b="collect.${i}.year" aria-label="Tax year">${opts}</select></td>`
+        + `<td><input class="in" data-b="collect.${i}.bank" value="${esc(p.bank||'')}" aria-label="Bank"></td>`
+        + `<td><input class="in" data-b="collect.${i}.challan" value="${esc(p.challan||'')}" aria-label="e-challan no"></td>`
+        + `<td><input class="in" type="date" data-b="collect.${i}.date" value="${esc(p.date||'')}" aria-label="Date"></td>`
+        + `<td><input class="in num${isNaN(num(p.amount))?' bad':''}" data-b="collect.${i}.amount" data-num="1" inputmode="decimal" value="${esc(p.amount||'')}" aria-label="Amount"></td>`
+        + `<td><button class="btn danger" data-pdel="${i}" aria-label="Delete payment ${i+1}">✕</button></td></tr>`;
+    });
+    h += `</tbody><tfoot><tr class="tot"><td></td><td colspan="4" style="text-align:left">মোট · Total</td><td id="payTot"></td><td></td></tr></tfoot></table></div>`;
+    h += `<div style="margin-top:10px"><button class="btn dark" id="addPay">+ Add payment</button></div>`;
   } else if(curTab==='bank'||curTab==='fdr'){
     const names = {bank:'সঞ্চয়ী ও চলতি হিসাব (এফডিআর ব্যতীত)', fdr:'এফডিআর হিসাব'};
     const rows = state[curTab][curYear] ||= [];
-    h += `<div class="imp"><button class="btn dark" id="impTab">Import from Excel</button><span>Reads the <b>${{bank:'Bank Details (Non-FD)',fdr:'FDR Details'}[curTab]}</b> sheet of an .xlsx file for all years at once. Each year needs a title like “করবর্ষঃ ২০১৯-২০২০”, a header row with “ব্যাংকের নাম ও শাখা”, and ends at the “মোট” row — the same layout as your workbook.</span></div>`;
+    h += `<div class="imp"><button class="btn dark" id="impTab">Import from Excel</button><span>Reads the <b>${{bank:'Bank',fdr:'FDR'}[curTab]}</b> sheet of an .xlsx file for all years at once. Each year needs a title like “করবর্ষঃ ২০১৯-২০২০”, a header row with “ব্যাংকের নাম ও শাখা”, and ends at the “মোট” row — the same layout as your workbook.</span></div>`;
     h += yearChips() + `<p class="hint">${names[curTab]} — ${YEARS[curYear]}. English bank names and account types turn into Bangla when you leave the box (“Branch” becomes “শাখা”). To paste from Excel, copy one or more rows there and paste into any box here — the cells fill across and new rows are added. Empty rows are left out of the report.</p>`;
     h += `<div class="rows"><table><thead><tr><th></th>${RF.map(f=>`<th>${f[1]}</th>`).join('')}<th></th></tr></thead><tbody>`;
     if(!rows.length) h += `<tr><td colspan="9" class="empty">No accounts for this year yet. Add one below.</td></tr>`;
@@ -997,6 +1038,8 @@ function updateLive(){
   if(rt){ const rows = state[curTab][curYear] || [];
     const s = k => rows.reduce((a,r)=>a+(isNaN(num(r[k]))?0:num(r[k])),0);
     rt.innerHTML = `<tr class="tot"><td></td><td colspan="3" style="text-align:left">মোট · Total</td>${['deposit','interest','tds','balance'].map(k=>`<td>${fmtDec(s(k))}</td>`).join('')}<td></td></tr>`; }
+  const pt = document.getElementById('payTot');
+  if(pt) pt.textContent = fmtDec((state.collect||[]).reduce((a,p)=>a+(isNaN(num(p.amount))?0:num(p.amount)),0));
   renderReport(); fitPaper();
 }
 let tmr; function schedule(){ clearTimeout(tmr); tmr = setTimeout(()=>{ updateLive(); persist(); }, 160); }
@@ -1014,7 +1057,7 @@ function acctTables(key, secNo, secTitle){
   let h = `<h4>${secNo} ${secTitle}</h4>`;
   vis.forEach(({y})=>{
     const rows = (state[key][y]||[]).filter(r=>RF.some(([k])=>String(r[k]??'').trim()));
-    h += `<table><thead><tr><th colspan="8" style="text-align:left">করবর্ষঃ ${yr(y)}</th></tr><tr><th style="width:5%">ক্রমিক</th><th style="width:22%">ব্যাংকের নাম ও শাখা</th><th>হিসাবের ধরণ</th><th>হিসাব নং</th><th>মোট জমা (ক্রেডিটকৃত সুদ ব্যতীত)</th><th>মোট ক্রেডিটকৃত সুদ</th><th>আয়কর কর্তন</th><th>স্থিতি</th></tr></thead><tbody>`;
+    h += `<table><thead><tr><th colspan="8" style="text-align:center">করবর্ষঃ ${yr(y)}</th></tr><tr><th style="width:5%">ক্রমিক</th><th style="width:22%">ব্যাংকের নাম ও শাখা</th><th>হিসাবের ধরণ</th><th>হিসাব নং</th><th>মোট জমা (ক্রেডিটকৃত সুদ ব্যতীত)</th><th>মোট ক্রেডিটকৃত সুদ</th><th>আয়কর কর্তন</th><th>স্থিতি</th></tr></thead><tbody>`;
     if(!rows.length) h += `<tr><td colspan="8" class="c muted">তথ্য পাওয়া যায়নি</td></tr>`;
     rows.forEach((r,i)=>{ h += `<tr><td class="c">${bn(i+1)}</td><td>${esc(r.bank)}</td><td>${esc(r.type)}</td><td>${esc(bn(r.acct||''))}</td><td class="r">${fmtRaw(r.deposit)}</td><td class="r">${fmtRaw(r.interest)}</td><td class="r">${fmtRaw(r.tds)}</td><td class="r">${fmtRaw(r.balance)}</td></tr>`; });
     const s = k => (state[key][y]||[]).reduce((a,r)=>a+(isNaN(num(r[k]))?0:num(r[k])),0);
@@ -1027,7 +1070,7 @@ function calcBlock(r){
     return `<tr class="${opt.cls||''}"><td class="${opt.ind?'ind':''}">${label}</td><td class="r">${c[0]}</td><td class="r">${c[1]}</td><td class="r">${c[2]}</td></tr>`; };
   const H = t => `<tr class="sub"><td colspan="4">${t}</td></tr>`;
   const Y = state.years[r.y];
-  let h = `<div class="calc"><table><thead><tr><th colspan="4" style="text-align:left">করবর্ষঃ ${yr(r.y)}</th></tr><tr><th>বিবরণ</th><th>টাকা</th><th>টাকা</th><th>টাকা</th></tr></thead><tbody>`;
+  let h = `<div class="calc"><table><thead><tr><th colspan="4" style="text-align:center">করবর্ষঃ ${yr(r.y)}</th></tr><tr><th>বিবরণ</th><th>টাকা</th><th>টাকা</th><th>টাকা</th></tr></thead><tbody>`;
   h += L('প্রদর্শিত মোট করযোগ্য আয়',0,r.declaredIncome)+L('অপ্রদর্শিত মোট করযোগ্য আয়',0,r.undiscIncome);
   h += `<tr class="key"><td>মোট করযোগ্য আয়</td><td class="r">${fmt(r.totalTaxable)}</td><td></td><td class="r">${fmt(r.totalTaxable)}</td></tr>`;
   h += H('সম্পদ বিবরণী পর্যালোচনাঃ');
@@ -1041,7 +1084,8 @@ function calcBlock(r){
   if(r.finalIncome) h += L('(−) চূড়ান্ত করদায় প্রযোজ্য আয়',0,r.finalIncome,{ind:1});
   h += L('নিয়মিত করহারে করযোগ্য আয়'+(state.meta.female?' (মহিলা করদাতা: করমুক্ত সীমা '+bn('50,000')+' টাকা বেশি)':''),2,r.regular);
   h += H('সম্ভাব্য প্রদেয় কর');
-  h += L('নিরূপিত আয়ের উপর প্রদেয় কর',0,r.tax)+L('বাদঃ বিনিয়োগজনিত রেয়াত',0,r.rebate,{ind:1})+L('রেয়াত পরবর্তী প্রদেয় কর (ক)',0,r.afterRebate);
+  h += L('নিয়মিত করহারে করযোগ্য আয়ের উপর প্রদেয় কর',0,r.regTax,{ind:1})+L('চূড়ান্ত করদায় প্রযোজ্য আয়ের উপর প্রদেয় কর',0,r.finalTaxAmt,{ind:1});
+  h += L('নিরূপিত মোট আয়ের উপর প্রদেয় কর',0,r.tax,{cls:'key'})+L('বাদঃ বিনিয়োগজনিত রেয়াত',0,r.rebate,{ind:1})+L('রেয়াত পরবর্তী প্রদেয় কর (ক)',0,r.afterRebate);
   h += L(`প্রদেয় সারচার্জ (খ)${r.surRate?' ('+pct(r.surRate)+')':''}`,0,r.surcharge)+L('প্রদেয় পরিবেশ সারচার্জ (গ)',0,r.env);
   h += L('মোট প্রদেয় কর ও সারচার্জ (ঘ) = (ক+খ+গ)',1,r.totalTax,{cls:'key'});
   h += L('প্রদর্শিত মোট পরিশোধিত কর ও সারচার্জ (ঙ)',0,r.paid,{ind:1})+L('অপ্রদর্শিত উৎসে ও অগ্রিম পরিশোধিত কর (চ)',0,r.undiscTds,{ind:1});
@@ -1050,17 +1094,50 @@ function calcBlock(r){
   h += L('সম্ভাব্য জরিমানাসহ মোট প্রদেয় কর',2,r.grand,{cls:'key'});
   return h + `</tbody></table></div>`;
 }
-// §1 "source of income": the heads with an amount shown in the return, e.g. "সুদ আয়, চাকরি হইতে আয়"
+// §1 "source of income": the heads with an amount shown in the return, e.g. "আর্থিক পরিসম্পদ হতে আয় (চূড়ান্ত করদায় ব্যতীত), চাকরি হইতে আয়"
 function incomeSources(Y){
+  const FIN = 'আর্থিক পরিসম্পদ হতে আয়';
   const list = [];
-  if(num(Y.shownInterest) > 0) list.push('সুদ আয়');
-  for(const [,s,l] of INCOME_HEADS) if(num(Y[s]) > 0) list.push(l.replace(/^\([^)]*\)\s*/,''));
-  return list.join(', ');
+  if(num(Y.shownInterest) > 0) list.push(FIN);
+  for(const [,s,l] of INCOME_HEADS) if(num(Y[s]) > 0){
+    const name = l.replace(/^\([^)]*\)\s*/,'');
+    list.push(name.includes('সুদ') ? FIN : name);   // any head with "সুদ" counts as income from financial assets
+  }
+  return [...new Set(list)].join(', ');          // each name only once
 }
+
 function reportFileName(){
   const nm = String(state.meta.name||'').trim().replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ');
   return 'কর ফাঁকির তদন্ত প্রতিবেদন' + (nm ? '-' + nm : '');
 }
+/* ---------- payments against the evaded tax (আদায়) ---------- */
+const COLLECT_INTRO = 'করদাতা বিভিন্ন করবর্ষের জন্য ফাঁকিকৃত আয়কর ও জরিমানার আংশিক/সম্পূর্ণ অংশ নিম্নবর্ণিত এ-চালান এর মাধ্যমে পরিশোধ করেছেন-';
+function fmtDate(s){ const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return bn(m ? `${m[3]}/${m[2]}/${m[1]}` : String(s||'')); }
+function paymentsSection(no){
+  const rows = (state.collect||[]).map((p,i)=>({...p, i})).filter(p => ['year','bank','challan','date','amount'].some(k => String(p[k] ?? '').trim()));
+  if(!rows.length) return '';
+  rows.sort((a,b) => String(a.year||'').localeCompare(String(b.year||'')) || String(a.date||'').localeCompare(String(b.date||'')) || a.i - b.i);
+  let h = `<h3>${no}। ফাঁকিকৃত আয়কর ও জরিমানার বিপরীতে পরিশোধিত আয়করঃ</h3><p>${esc(state.meta.collectIntro ?? COLLECT_INTRO)}</p>`;
+  h += `<table><thead><tr><th style="width:16%">করবর্ষ</th><th>ব্যাংকের নাম</th><th>এ-চালান নং</th><th style="width:14%">তারিখ</th><th style="width:18%">পরিমাণ</th></tr></thead><tbody>`;
+  rows.forEach((p,k) => {
+    const first = k === 0 || rows[k-1].year !== p.year;
+    let span = 1; if(first) while(k + span < rows.length && rows[k+span].year === p.year) span++;
+    h += `<tr>${first ? `<td class="c"${span>1 ? ` rowspan="${span}"` : ''} style="vertical-align:middle">${esc(bn(p.year||''))}</td>` : ''}`
+      + `<td>${esc(p.bank||'')}</td><td class="c">${esc(bn(p.challan||''))}</td><td class="c">${esc(fmtDate(p.date))}</td><td class="r">${fmtRaw(p.amount)}</td></tr>`;
+  });
+  const tot = rows.reduce((a,p)=>a+(isNaN(num(p.amount))?0:num(p.amount)),0);
+  return h + `<tr class="tot"><td colspan="4" class="c">মোটঃ</td><td class="r">${fmtDec(tot)}</td></tr></tbody></table>`;
+}
+document.addEventListener('click', e=>{
+  const t = e.target.closest('button'); if(!t) return;
+  if(t.id === 'addPay'){ const pays = state.collect ||= []; pays.push({year: pays.length ? pays.at(-1).year : '', bank:'', challan:'', date:'', amount:''}); persist(); renderPane();
+    const s = document.querySelector(`[data-b="collect.${pays.length-1}.bank"]`); if(s) s.focus(); }
+  else if(t.dataset.pdel !== undefined){ state.collect.splice(+t.dataset.pdel, 1); persist(); renderPane(); }
+});
+document.addEventListener('change', e=>{   // bank name typed in English → Bangla, as in the bank tables
+  const t = e.target, path = t.dataset && t.dataset.b;
+  if(path && /^collect\.\d+\.bank$/.test(path)){ const v = toBanglaText(t.value); if(v !== t.value){ t.value = v; setP(path, v); updateLive(); persist(); } }
+});
 function renderReport(){
   const m = state.meta, el = document.getElementById('report');
   el.className = 'rep' + (m.font==='sans' ? ' sans' : '');
@@ -1076,10 +1153,10 @@ function renderReport(){
   h += `<h3>২। প্রাপ্ত ব্যাংক/আর্থিক হিসাব/বিবিধ তথ্যঃ</h3>` + acctTables('bank','২.১','সঞ্চয়ী ও চলতি হিসাবঃ') + acctTables('fdr','২.২','এফডিআর হিসাবঃ');
   h += `<h3>৩। অপ্রদর্শিত আয়, ব্যয়, বিনিয়োগ ও সম্পদের সার-সংক্ষেপঃ</h3>`;
   h += `<h4>৩.১ অপ্রদর্শিত করযোগ্য আয়</h4>` + yearTable('তদন্তে প্রাপ্ত তথ্য/করবর্ষ',[
-    ['সুদ আয়',r=>r.interest,'',1], ...INCOME_HEADS.map(([,,l],i)=>[l, r=>r.heads[i], '', 1]), ['মোট প্রাপ্ত করযোগ্য আয়',r=>r.foundIncome,'tot'],
+    ['আর্থিক পরিসম্পদ হতে আয় (চূড়ান্ত করদায় প্রযোজ্য আয় ব্যতীত)',r=>r.interest,'',1], ...INCOME_HEADS.map(([,,l],i)=>[l, r=>r.heads[i], '', 1]), ['মোট প্রাপ্ত করযোগ্য আয়',r=>r.foundIncome,'tot'],
     ['রিটার্নে প্রদর্শিত (সুদসহ সকল খাতের আয়)',r=>r.shownComp],['অপ্রদর্শিত করযোগ্য আয়',r=>r.undiscIncome,'tot']]);
   h += `<h4>৩.২ অপ্রদর্শিত ব্যয়</h4>` + yearTable('তদন্তে প্রাপ্ত তথ্য/করবর্ষ',[
-    ['উৎসে পরিশোধিত কর',r=>r.tdsFound],['পূর্বের রিটার্নের সাথে/অন্যান্য পরিশোধিত আয়কর',r=>r.priorTax],['পারিবারিক খরচ (আয়কর ব্যতীত)',r=>r.familyExp],
+    ['উৎসে পরিশোধিত কর (ব্যাংক হিসাবে প্রাপ্ত)',r=>r.tdsFound],['পূর্বের রিটার্নের সাথে/অন্যান্য পরিশোধিত আয়কর (ব্যাংক হিসাব ব্যতীত)',r=>r.priorTax],['পারিবারিক খরচ (আয়কর ব্যতীত)',r=>r.familyExp],
     ['প্রাপ্ত মোট ব্যয় ও ক্ষতি',r=>r.foundExp,'tot'],['প্রদর্শিত মোট ব্যয় ও ক্ষতি',r=>r.shownExp],['অপ্রদর্শিত ব্যয় ও ক্ষতি',r=>r.undiscExp,'tot']]);
   h += `<h4>৩.৩ অপ্রদর্শিত বিনিয়োগ</h4>` + yearTable('তদন্তে প্রাপ্ত তথ্য/করবর্ষ',[
     ['এফডিআর এর স্থিতি',r=>r.fdrBal],['অন্যান্য হিসাবের স্থিতি ও নগদ অর্থ',r=>r.bankBal],
@@ -1093,7 +1170,8 @@ function renderReport(){
   const T = k => vis.reduce((a,r)=>a+r[k],0);
   h += `<tr class="tot"><td class="c">মোটঃ</td><td class="r">${fmt(T('assessed'))}</td><td class="r">${fmt(T('evaded'))}</td><td class="r">${fmt(T('penalty'))}</td><td class="r">${fmt(T('grand'))}</td></tr></tbody></table>`;
   h += `<p class="note">${esc(m.note)}</p>`;
-  h += `<h3>৮। সুপারিশঃ</h3><p>${esc(m.recommendations)}</p><div class="sign">${esc(m.signature)}</div>`;
+  const pay = paymentsSection('৮'); h += pay;
+  h += `<h3>${pay ? '৯' : '৮'}। সুপারিশঃ</h3><p>${esc(m.recommendations)}</p><div class="sign">${esc(m.signature)}</div>`;
   el.innerHTML = h;
 }
 function fitPaper(){
@@ -1191,7 +1269,7 @@ document.getElementById('fileIn').onchange = e=>{
 };
 document.getElementById('bReset').onclick = ()=>{
   if(!confirm('Start a new report? The taxpayer details, yearly figures and bank/FDR accounts will be cleared. Save the current data first if you need it.')) return;
-  const keep = {}; for(const k of ['header','title','intro','note','recommendations','signature','bengaliDigits','font']) keep[k] = state.meta[k];
+  const keep = {}; for(const k of ['header','title','intro','note','recommendations','signature','collectIntro','bengaliDigits','font']) keep[k] = state.meta[k];
   state = clone(DEFAULTS); Object.assign(state.meta, keep); curYear = 0; persist(); renderTabs(); renderPane(); };
 
 document.addEventListener('click', e=>{ if(e.target.id==='impTab'){ importTarget = curTab; document.getElementById('xlsIn').click(); } });
